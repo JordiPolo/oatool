@@ -157,13 +157,13 @@ fn main() {
         .subcommand(SubCommand::with_name("to_yaml")
             .about("Translates OpenAPI input to YAML")
             .arg(&stdin_arg))
-        .subcommand(SubCommand::with_name("merge")
-            .about("Merges different OpenAPI specs into one")
-            .arg(Arg::with_name("files")
-                .help("List of files, comma separated ")
-                .required(true)
-                .multiple(true)
-                .index(1)))
+        // .subcommand(SubCommand::with_name("merge")
+        //     .about("Merges different OpenAPI specs into one")
+        //     .arg(Arg::with_name("files")
+        //         .help("List of files, comma separated ")
+        //         .required(true)
+        //         .multiple(true)
+        //         .index(1)))
         .get_matches();
 
     match application.subcommand() {

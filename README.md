@@ -10,10 +10,7 @@ More functionality like merging diferent files will be added soon.
 
 ## Installing
 
-If you have a Rust development environment setup in your machine, just install it with Cargo:
-```
-cargo install oatool
-```
+TODO: Install via Cargo.
 
 If you do not want to setup Rust, this repository contains static linked binaries which should run without dependencies in Linux, MacOS X and Windows. Just download the [latest release](./releases) for your platform.
 
