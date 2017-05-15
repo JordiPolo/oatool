@@ -1,6 +1,6 @@
 [package]
 name = "oatool"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Jordi Polo Carres <mumismo@gmail.com>"]
 
 [dependencies]

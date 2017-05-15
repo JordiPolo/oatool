@@ -10,8 +10,8 @@ use error::Result;
 use error::OpenApiError;
 
 
-fn validate_stdin() -> Result<String> {
-    let spec = openapi::from_reader(std::io::stdin())?;
+fn validate_file(path: &str) -> Result<String> {
+    let spec = openapi::from_path(path)?;
     validate(&spec)
 }
 
@@ -99,13 +99,13 @@ fn validate(borrow_spec: &openapi::Spec) -> Result<String> {
     Ok(spec.info.title.to_owned().unwrap())
 }
 
-fn to_json() -> Result<String> {
-    let spec = openapi::from_reader(std::io::stdin())?;
+fn to_json(path: &str) -> Result<String> {
+    let spec = openapi::from_path(path)?;
     Ok(openapi::to_json(&spec)?)
 }
 
-fn to_yaml() -> Result<String> {
-    let spec = openapi::from_reader(std::io::stdin())?;
+fn to_yaml(path: &str) -> Result<String> {
+    let spec = openapi::from_path(path)?;
     Ok(openapi::to_yaml(&spec)?)
 }
 
@@ -127,36 +127,35 @@ fn merge(files: Vec<&str>) -> Result<()> {
 }
 
 fn main() {
-    // TODO: Support this
-    /*
     let file_arg = Arg::with_name("file")
                 .help("OpenAPI spec file")
-                .required(false)
+                .required(true)
                 .long("OpenAPI spec file") // seems to do nothing
                 .index(1);
-    */
-
-
-
+/*
     let stdin_arg = Arg::with_name("stdin")
         .help("Reads from STDIN.")
         .long_help("Redirect files to the STDIN like  oatool < spec.yml")
         .required(false)
         .index(1);
-
+*/
     let application = App::new("oatool")
         .version("0.1.0")
         .about("A tool to manage OpenAPI files")
         .setting(AppSettings::AllowExternalSubcommands)
         .subcommand(SubCommand::with_name("validate")
-            .about("Validates the OpenAPI input following opionated rules")
-            .arg(&stdin_arg))
-        .subcommand(SubCommand::with_name("to_json")
-            .about("Translates OpenAPI input to JSON")
-            .arg(&stdin_arg))
-        .subcommand(SubCommand::with_name("to_yaml")
-            .about("Translates OpenAPI input to YAML")
-            .arg(&stdin_arg))
+            .about("Validates an OpenAPI spec file following opionated rules")
+            .arg(&file_arg))
+        .subcommand(SubCommand::with_name("convert")
+            .about("Translates an OpenAPI spec file to other format.")
+            .arg(&file_arg)
+            .arg(Arg::with_name("to")
+                .long("to")
+                .takes_value(true)
+                .require_equals(true)
+                .required(true)
+                .possible_values(&["yaml", "json"])
+                .help("Sets the format to convert the file to.")))
         // .subcommand(SubCommand::with_name("merge")
         //     .about("Merges different OpenAPI specs into one")
         //     .arg(Arg::with_name("files")
@@ -167,24 +166,27 @@ fn main() {
         .get_matches();
 
     match application.subcommand() {
-        ("validate", Some(_arguments)) => {
-            match validate_stdin() {
+        ("validate", Some(arguments)) => {
+            match validate_file(arguments.value_of("file").unwrap()) {
                 Ok(title) => println!("Validation of {} successful!", title),
                 Err(e) => exit_with_error(e, "Validation failed"),
             }
-        }
-        ("to_json", Some(_arguments)) => {
-            match to_json() {
-                Ok(text) => println!("{}", text),
-                Err(e) => exit_with_error(e, "Translation to JSON failed"),
+        },
+        ("convert", Some(arguments)) => {
+            let filename = arguments.value_of("file").unwrap();
+            let operation = arguments.value_of("to").unwrap();
+            //TODO: DRY
+            let mut result = Ok(String::new());
+            if operation == "json" {
+                result = to_json(filename);
+            } else {
+                result = to_yaml(filename);
             }
-        }
-        ("to_yaml", Some(_arguments)) => {
-            match to_yaml() {
+            match result {
                 Ok(text) => println!("{}", text),
-                Err(e) => exit_with_error(e, "Translation to YAML failed"),
+                Err(e) => exit_with_error(e, &format!("Translation to {} failed", &operation)),
             }
-        }
+        },
         ("merge", Some(arguments)) => {
             match merge(arguments.values_of("files").unwrap().collect()) {
                 Ok(_) => println!("Files merged into one.yml"),

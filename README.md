@@ -18,22 +18,22 @@ If you do not want to setup Rust, this repository contains static linked binarie
 
 ### Validate
 ```
-oatool validate < openapi.yaml
+oatool validate openapi.yaml
 ```
 
 ### Convert to JSON
 ```
-oatool to_json < openapi.yaml
+oatool convert openapi.yaml --to=json
 ```
 
 ### Convert to yaml
 ```
-oatool to_json < openapi.yaml
+oatool convert openapi.json --to=yaml
 ```
 
-All operations act upon stdin and print to stdout so they can be redirected to files or use them together:
+All operations print to stdout. Output can be redirected to an output file:
 ```
-oatool to_json < openapi.yaml > openapi.json
+oatool convert openapi.yaml --to=json > openapi.json
 ```
 
 
