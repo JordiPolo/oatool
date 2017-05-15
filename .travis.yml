@@ -1,0 +1,41 @@
+dist: trusty
+language: rust
+services: docker
+sudo: required
+env:
+  global:
+  - CRATE_NAME=oatool
+matrix:
+  include:
+  - env: TARGET=x86_64-unknown-linux-gnu
+  - env: TARGET=x86_64-apple-darwin
+    os: osx
+before_install: set -e
+install:
+- sh ci/install.sh
+- source ~/.cargo/env || true
+script:
+- bash ci/script.sh
+after_script: set +e
+before_deploy:
+- sh ci/before_deploy.sh
+deploy:
+  api_key:
+    secure: QMyJD143PPLrY3dIMuKTn7zsyM85GjBCeGmuW0A8nP7YCYcrXGogZ78p7g08v1x75TiPtf2rEiyJVBNSE3rQTXsI6g3ce+3V5NBBbUA3fS5oJaQtSc0q7obQilltUvVeVWzdfrNXbCzd8k0Ttg4f0QJtdt7/tkI1+Z8NEvHLPHd1wGiOsEF0ClHK9Q7STn8ahakzt7Ye40no3gpNNr1EDofc6e7MqMpOxkcpzmPtS80nQzJ3A7joxg5M8yKUpCGoJ4pcfsJoLOdkyFUW7sxxfcXiJgaogOO9zKtqh+dYcr1q57BILfGlDr98UJUb9HXm/nDn1JrhZqRqFUZrwRFmXP7nE9UHyoYpOBJhWaMHEChr/ran4m85c0Pj0R9tTReyJWBuvhPbWM49Xlo1isbt4hQIOF+xjD0+MBArWr15YDTGNSPiyQHNG11MO8hIHaiLxnYQ1uSDgs1nxLWVR2Q4uQIeZT+WlVKR/EiifnPdmC0O79ptVQul9qY9qrSaGZJLN4nyRV0BGJRaen7V505bRGfLHGWjrP3QPUX1eKHAYoFmaG5M0Dqy+Yxcc4mf5yZmEVfjpBznx335PGIRsKBC/vl/OgZA7aKfSqydSc+0FLx7myIYoJrzX3hhto7aTP7SiOHtDF7aBlohsFnykoG71HJKSUtoGZqK9UVyOIH5f+U=
+  file_glob: true
+  file: "$CRATE_NAME-$TRAVIS_TAG-$TARGET.*"
+  on:
+    condition: "$TRAVIS_RUST_VERSION = stable"
+    tags: true
+  provider: releases
+  skip_cleanup: true
+cache: cargo
+before_cache:
+- chmod -R a+r $HOME/.cargo
+branches:
+  only:
+  - "/^v\\d+\\.\\d+\\.\\d+.*$/"
+  - master
+notifications:
+  email:
+    on_success: never
