@@ -12,7 +12,7 @@ More functionality like merging diferent files will be added soon.
 
 TODO: Install via Cargo.
 
-If you do not want to setup Rust, this repository contains static linked binaries which should run without dependencies in Linux, MacOS X and Windows. Just download the [latest release](./releases) for your platform.
+If you do not want to setup Rust, this repository contains static linked binaries which should run without dependencies in Linux, MacOS X and Windows. Just download the [latest release](https://github.com/JordiPolo/oatool/releases) for your platform.
 
 ## Using
 
