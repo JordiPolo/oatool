@@ -44,7 +44,7 @@ test_script:
 
 before_deploy:
   # TODO Update this to build the artifacts that matter to you
-  - cargo rustc --target %TARGET% --release --bin file_http_server -- -C lto
+  - cargo rustc --target %TARGET% --release --bin oatool -- -C lto
   - ps: ci\before_deploy.ps1
 
 deploy:
@@ -54,7 +54,7 @@ deploy:
   # - Encrypt it. Go to https://ci.appveyor.com/tools/encrypt
   # - Paste the output down here
   auth_token:
-    secure: TndxlEqHCOu+zRsuxqn+32kevUDMz5ZP53sREckBoBOdQBxywwWaSBN0yrOjDg+I
+    secure: REeB1My6Fd9snvcNe/J8W9Okq+2PeIzhiBsIAOGnLEClTIpH0qCCGnccX943Eh/o
   description: ''
   on:
     RUST_VERSION: stable
