@@ -1,6 +1,6 @@
 extern crate clap;
 extern crate openapi;
-extern crate serde;
+extern crate google_discovery;
 
 #[macro_use]
 extern crate error_chain;
@@ -10,21 +10,23 @@ use clap::{Arg, App, AppSettings, SubCommand};
 mod validation;
 pub mod errors {
     error_chain!{
-        links {
-            Parse(::openapi::errors::Error, ::openapi::errors::ErrorKind);
+        foreign_links {
+            Parse(::openapi::errors::Error);
+            Convert(::google_discovery::errors::Error);
         }
     }
 }
 use errors::*;
 
+fn parse_spec(path: &str) -> Result<openapi::Spec> {
+    Ok(openapi::from_path(path).chain_err(|| "Unable to parse the input file.")?)
+}
 
-fn to_json(path: &str) -> Result<String> {
-    let spec = openapi::from_path(path).chain_err(|| "Unable to parse the input file.")?;
+fn to_json(spec: &openapi::Spec) -> Result<String> {
     Ok(openapi::to_json(&spec).chain_err(|| "Unable to serialize into JSON.")?)
 }
 
-fn to_yaml(path: &str) -> Result<String> {
-    let spec = openapi::from_path(path).chain_err(|| "Unable to parse the input file.")?;
+fn to_yaml(spec: &openapi::Spec) -> Result<String> {
     Ok(openapi::to_yaml(&spec).chain_err(|| "Unable to serialize into YAML.")?)
 }
 
@@ -44,11 +46,11 @@ fn merge(files: Vec<&str>) -> Result<()> {
     // let specs : Vec<Result<openapi::Spec>> = files.iter().map(|a| openapi::from_path(a)).collect();
    // let file: String = files.iter().take(1).collect();
    // let spec: openapi::Spec = validation::validate_file(files.iter().take(1).collect())?;
-    for file in files {
+/*    for file in files {
         print!("{:?}", file);
         let spec = openapi::from_path(file)?;
         validation::validate(&spec)?;
-    }
+    }*/
     Ok(())
 }
 
@@ -73,14 +75,21 @@ fn main() {
             .about("Validates an OpenAPI spec file following opionated rules")
             .arg(&file_arg))
         .subcommand(SubCommand::with_name("convert")
-            .about("Translates an OpenAPI spec file to other format.")
+            .about("Translates an API spec file to other format.")
             .arg(&file_arg)
+            .arg(Arg::with_name("from")
+                .long("from")
+                .takes_value(true)
+                .require_equals(true)
+                .required(true)
+                .possible_values(&["openapi", "google"])
+                .help("Sets the format to convert the file from."))
             .arg(Arg::with_name("to")
                 .long("to")
                 .takes_value(true)
                 .require_equals(true)
                 .required(true)
-                .possible_values(&["yaml", "json"])
+                .possible_values(&["openapi_yaml", "openapi_json"])
                 .help("Sets the format to convert the file to.")))
         // .subcommand(SubCommand::with_name("merge")
         //     .about("Merges different OpenAPI specs into one")
@@ -100,18 +109,12 @@ fn main() {
         }
         ("convert", Some(arguments)) => {
             let filename = arguments.value_of("file").unwrap();
-            let operation = arguments.value_of("to").unwrap();
-            let mut result = Ok(String::new());
+            let from = arguments.value_of("from").unwrap();
+            let to = arguments.value_of("to").unwrap();
 
-            match operation {
-                "json" => result = to_json(filename),
-                "yaml" => result = to_yaml(filename),
-                _ => ()
-            }
-
-            match result {
+            match convert(filename, from, to) {
                 Ok(text) => println!("{}", text),
-                Err(e) => exit_with_error(e, &format!("Translation to {} failed", &operation)),
+                Err(e) => exit_with_error(e, &format!("Convertion from {} to {} failed", &from, &to)),
             }
         }
         ("merge", Some(arguments)) => {
@@ -124,4 +127,21 @@ fn main() {
     }
 
     std::process::exit(0);
+}
+
+
+fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
+       // let mut result = Ok(String::new());
+        let mut openapi_spec: openapi::Spec;
+        if from == "openapi" {
+            openapi_spec = parse_spec(&filename)?
+        } else {
+            openapi_spec = google_discovery::convert(google_discovery::from_path(&filename)?)?
+        }
+
+        match to {
+            "json" => to_json(&openapi_spec),
+            "yaml" => to_yaml(&openapi_spec),
+            _ => Ok("".to_string())
+        }
 }

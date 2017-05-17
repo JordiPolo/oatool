@@ -6,10 +6,6 @@ dependencies = [
  "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "google_discovery 0.1.0",
  "openapi 0.1.5 (git+https://github.com/JordiPolo/openapi?branch=feature/cloning)",
- "serde 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_yaml 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -111,6 +107,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "google_discovery"
 version = "0.1.0"
 dependencies = [
+ "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openapi 0.1.5 (git+https://github.com/JordiPolo/openapi?branch=feature/cloning)",
  "serde 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",

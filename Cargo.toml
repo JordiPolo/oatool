@@ -1,20 +1,22 @@
 [package]
 name = "oatool"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Jordi Polo Carres <mumismo@gmail.com>"]
+description = "Tool to manage OpenAPI spec files"
+
+documentation = "https://github.com/JordiPolo/oatool"
+homepage = "https://github.com/JordiPolo/oatool"
+repository = "https://github.com/JordiPolo/oatool"
+
+keywords = ["openapi", "CLI"]
+license = "MIT/Apache-2.0"
+
 
 [dependencies]
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-serde_yaml = "0.7"
 clap = "2"
 error-chain = "0.10"
-
 google_discovery = { path = "google_discovery" }
 
 [dependencies.openapi]
   git = "https://github.com/JordiPolo/openapi"
   branch = "feature/cloning"
-#openapi = { path = "../openapi" }
-

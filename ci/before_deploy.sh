@@ -20,6 +20,8 @@ main() {
     # TODO Update this to build the artifacts that matter to you
     cross rustc --bin oatool --target $TARGET --release -- -C lto
 
+    strip target/$TARGET/release/oatool
+
     # TODO Update this to package the right artifacts
     cp target/$TARGET/release/oatool $stage/
 

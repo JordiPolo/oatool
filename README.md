@@ -23,23 +23,28 @@ oatool validate openapi.yaml
 
 ### Convert to JSON
 ```
-oatool convert openapi.yaml --to=json
+oatool convert openapi.yaml --from=openapi --to=openapi_json
 ```
 
 ### Convert to yaml
 ```
-oatool convert openapi.json --to=yaml
+oatool convert openapi.json --from=openapi --to=openapi_yaml
+```
+
+### Convert from Google discovery to OpenApi
+```
+oatool convert openapi.json --from=google --to=openapi_yaml
 ```
 
 All operations print to stdout. Output can be redirected to an output file:
 ```
-oatool convert openapi.yaml --to=json > openapi.json
+oatool convert openapi.yaml --from=openapi --to=openapi_json > openapi.json
 ```
 
 
 ## TODO
 
 * Make validation rules explicit, maybe add profiles or CLI flags to control them.
-* Convert from/to other formats : Openapi 3, google discovery, etc.
+* Convert from/to other formats : Openapi 3, etc.
 * Many test documents
 * Optionally act upon list of files
