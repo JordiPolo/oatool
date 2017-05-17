@@ -1,10 +1,11 @@
 // This module validates that the OpenAPI file is correct
 
 use openapi;
-use error::Result;
+//use error::Result;
+use errors::*;
 
 pub fn validate_file(path: &str) -> Result<openapi::Spec> {
-    let spec = openapi::from_path(path)?;
+    let spec = openapi::from_path(path).chain_err(|| "Unable to parse the input file.")?;
     validate(&spec)
 }
 

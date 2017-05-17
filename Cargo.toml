@@ -9,8 +9,12 @@ serde_derive = "1.0"
 serde_json = "1.0"
 serde_yaml = "0.7"
 clap = "2"
+error-chain = "0.10"
+
+google_discovery = { path = "google_discovery" }
 
 [dependencies.openapi]
   git = "https://github.com/JordiPolo/openapi"
   branch = "feature/cloning"
 #openapi = { path = "../openapi" }
+

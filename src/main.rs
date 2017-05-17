@@ -2,28 +2,41 @@ extern crate clap;
 extern crate openapi;
 extern crate serde;
 
+#[macro_use]
+extern crate error_chain;
+
 use clap::{Arg, App, AppSettings, SubCommand};
 
 mod validation;
-pub mod error;
-use error::Result;
-use error::OpenApiError;
+pub mod errors {
+    error_chain!{
+        links {
+            Parse(::openapi::errors::Error, ::openapi::errors::ErrorKind);
+        }
+    }
+}
+use errors::*;
 
 
 fn to_json(path: &str) -> Result<String> {
-    let spec = openapi::from_path(path)?;
-    Ok(openapi::to_json(&spec)?)
+    let spec = openapi::from_path(path).chain_err(|| "Unable to parse the input file.")?;
+    Ok(openapi::to_json(&spec).chain_err(|| "Unable to serialize into JSON.")?)
 }
 
 fn to_yaml(path: &str) -> Result<String> {
-    let spec = openapi::from_path(path)?;
-    Ok(openapi::to_yaml(&spec)?)
+    let spec = openapi::from_path(path).chain_err(|| "Unable to parse the input file.")?;
+    Ok(openapi::to_yaml(&spec).chain_err(|| "Unable to serialize into YAML.")?)
 }
 
-fn exit_with_error(error: OpenApiError, extra_error_message: &str) {
+fn exit_with_error(error: Error, extra_error_message: &str) {
     use std::io::Write;
-    writeln!(&mut std::io::stderr(), "{}", error.to_string()).unwrap();
+
     writeln!(&mut std::io::stderr(), "{}", extra_error_message).unwrap();
+    writeln!(&mut std::io::stderr(), "↳ {}", error.to_string()).unwrap();
+    for (i, e) in error.iter().enumerate().skip(1) {
+        let ident = " ".repeat(i);
+        writeln!(&mut std::io::stderr(), "{}↳ {}", ident, e).unwrap();
+    }
     std::process::exit(-1);
 }
 
