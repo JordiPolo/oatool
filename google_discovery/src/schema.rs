@@ -46,7 +46,7 @@ pub struct Method {
     pub description: String,
     pub parameters: BTreeMap<String, Parameter>,
     pub response: ArrayOrRef,
-    pub slt: Option<SLT>
+    pub slt: Option<SLT>,
 }
 
 
@@ -70,7 +70,7 @@ pub enum ArrayOrRef {
     Response {
         #[serde(rename="type")]
         response_type: String,
-        items: ItemRef
+        items: ItemRef,
     },
     Schema {
         id: String,
@@ -92,5 +92,5 @@ pub struct SLT {
     #[serde(rename="99th_percentile")]
     percentile_99th: String,
     std_dev: String,
-    requests_per_second: i32
+    requests_per_second: i32,
 }

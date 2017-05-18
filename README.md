@@ -45,6 +45,10 @@ oatool convert openapi.yaml --from=openapi --to=openapi_json > openapi.json
 ## TODO
 
 * Make validation rules explicit, maybe add profiles or CLI flags to control them.
-* Convert from/to other formats : Openapi 3, etc.
-* Many test documents
-* Optionally act upon list of files
+* Convert from/to other formats: Openapi 3, etc.
+* Add many test documents
+* Support $ref intra document
+* Support $ref inter documents
+* Support <<*
+* Smaller executable
+* SLT format in openapi

@@ -131,17 +131,16 @@ fn main() {
 
 
 fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
-       // let mut result = Ok(String::new());
-        let mut openapi_spec: openapi::Spec;
+        let openapi_spec: openapi::Spec;
         if from == "openapi" {
             openapi_spec = parse_spec(&filename)?
         } else {
-            openapi_spec = google_discovery::convert(google_discovery::from_path(&filename)?)?
+            openapi_spec = google_discovery::google_to_openapi(google_discovery::from_path(&filename)?)?
         }
 
-        match to {
-            "json" => to_json(&openapi_spec),
-            "yaml" => to_yaml(&openapi_spec),
-            _ => Ok("".to_string())
+        if to == "openapi_json" {
+            to_json(&openapi_spec)
+        } else {
+            to_yaml(&openapi_spec)
         }
 }

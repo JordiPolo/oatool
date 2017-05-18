@@ -1,5 +1,5 @@
 # 0.2.0
-* Adds conversion from Google discovery documents to OpenApi documents
+* Add conversion from Google discovery documents to OpenApi documents
 
 # 0.1.2
 * Act upon files instead of upon stdin

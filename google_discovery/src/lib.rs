@@ -1,5 +1,3 @@
-//#![feature(custom_attribute)]
-
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
@@ -17,10 +15,8 @@ use std::collections::BTreeMap;
 use std::io::Read;
 
 
-
 mod schema;
 pub use schema::*;
-
 
 pub mod errors {
     error_chain!{
@@ -34,27 +30,26 @@ pub mod errors {
 use errors::*;
 
 // TODO:
-// <<*
-// $ref
-// result
+// responses
+// SLTs
 
 
 /// deserialize an google discovery spec file from a path
 pub fn from_path<P>(path: P) -> Result<Spec>
-where P: AsRef<Path>,
+    where P: AsRef<Path>
 {
     from_reader(fs::File::open(path).chain_err(|| "Can't open google discovery spec file")?)
 }
 
 /// deserialize an google discovery spec from type which implements Read
 pub fn from_reader<R>(read: R) -> Result<Spec>
-where R: Read,
+    where R: Read
 {
     Ok(serde_yaml::from_reader::<R, Spec>(read).chain_err(|| "YAML file is not a valid google discovery file")?)
 }
 
 
-pub fn convert(google_spec: Spec) -> Result<openapi::Spec>{
+pub fn google_to_openapi(google_spec: Spec) -> Result<openapi::Spec> {
 
     let contact = openapi::Contact {
         name: Some("<YOUR NAME>".to_string()),
@@ -85,8 +80,7 @@ pub fn convert(google_spec: Spec) -> Result<openapi::Spec>{
         .collect();
 
     //array of BTreemaps
-    let methods: Vec<Method> = google_spec
-        .resources
+    let methods: Vec<Method> = google_spec.resources
         .values()
         .flat_map(|resource| resource.methods.values())
         .cloned()
@@ -94,15 +88,14 @@ pub fn convert(google_spec: Spec) -> Result<openapi::Spec>{
 
 
     let paths: Vec<String> = methods.iter().map(|method| &method.path).cloned().collect();
-    let operations: Vec<openapi::Operations> = methods.iter().map(|method| method_to_operations(method)).collect();
+    let operations: Vec<openapi::Operations> =
+        methods.iter().map(|method| method_to_operations(method)).collect();
     println!("{:?}", &operations);
     let mut spec_paths: BTreeMap<String, openapi::Operations> = BTreeMap::new();
     for (key, value) in paths.iter().zip(operations) {
         spec_paths.insert(key.to_string(), value);
     }
 
-
-  //  println!("{:?}", operations);
 
     let openapi_spec = openapi::Spec {
         swagger: "2.0".to_string(),
@@ -122,16 +115,12 @@ pub fn convert(google_spec: Spec) -> Result<openapi::Spec>{
     };
 
     Ok(openapi_spec)
-  //  let openapi_text = openapi::to_yaml(&openapi_spec).unwrap();
-
-    //  let text = serde_yaml::to_string(&google_spec).unwrap();
-   // println!("{}", openapi_text);
 }
 
 
 
 fn google_schema_to_openapi_schema(properties: &BTreeMap<String, Property>)
-                               -> BTreeMap<String, openapi::Schema> {
+                                   -> BTreeMap<String, openapi::Schema> {
     properties.iter()
         .map(|(property_name, property)| {
             (property_name.to_string(),
@@ -145,40 +134,56 @@ fn google_schema_to_openapi_schema(properties: &BTreeMap<String, Property>)
 }
 
 
-fn google_params_to_openapi_params(params: &BTreeMap<String, schema::Parameter>) -> Vec<openapi::ParameterOrRef> {
+fn google_params_to_openapi_params(params: &BTreeMap<String, schema::Parameter>)
+                                   -> Vec<openapi::ParameterOrRef> {
 
-    params.iter().map(|(name, param)|
-    openapi::ParameterOrRef::Parameter{
-    //    openapi::Parameter {
-            name: name.to_string(),
-            location: param.location.clone(),
-            description: param.description.clone(),
-            required: param.required,
-            format: None,
-            param_type: param.param_type.clone().or_else(|| Some("integer".to_string())),
-            schema: None,
-            unique_items: None
-           // ..Default::default()
-        }
-    ).collect()
+    params.iter()
+        .map(|(name, param)| {
+            openapi::ParameterOrRef::Parameter {
+                //    openapi::Parameter {
+                name: name.to_string(),
+                location: param.location.clone(),
+                description: param.description.clone(),
+                required: param.required,
+                format: None,
+                param_type: param.param_type.clone().or_else(|| Some("integer".to_string())),
+                schema: None,
+                unique_items: None, // ..Default::default()
+            }
+        })
+        .collect()
 
 }
 
 
-fn method_to_operations(method: &schema::Method) -> openapi::Operations {
-    let mut base_struct = openapi::Operations {
-        .. Default::default()
+fn default_responses() -> BTreeMap<String, openapi::Response> {
+    let mut default_response = BTreeMap::new();
+    let resource_404 = openapi::Response {
+        description: "Resource not found.".to_string(),
+        schema: None,
     };
+    let resource_500 = openapi::Response {
+        description: "Fatal error in the server.".to_string(),
+        schema: None,
+    };
+    default_response.insert("404".to_string(), resource_404);
+    default_response.insert("500".to_string(), resource_500);
+    default_response
+}
+
+fn method_to_operations(method: &schema::Method) -> openapi::Operations {
+    let mut base_struct = openapi::Operations { ..Default::default() };
+
     let operation = openapi::Operation {
         description: Some(method.description.clone()),
         operation_id: Some(method.id.to_string()),
         parameters: Some(google_params_to_openapi_params(&method.parameters)),
-        ..Default::default()
-       // method.response
+        responses: default_responses(),
+        ..Default::default() // method.response
     };
     if method.http_method == "GET" {
         base_struct.get = Some(operation);
-    } else if  method.http_method == "POST" {
+    } else if method.http_method == "POST" {
         base_struct.post = Some(operation);
     }
 
