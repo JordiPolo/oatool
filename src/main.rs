@@ -7,7 +7,8 @@ extern crate error_chain;
 
 use clap::{Arg, App, AppSettings, SubCommand};
 
-mod validation;
+mod spec;
+
 pub mod errors {
     error_chain!{
         foreign_links {
@@ -17,18 +18,6 @@ pub mod errors {
     }
 }
 use errors::*;
-
-fn parse_spec(path: &str) -> Result<openapi::Spec> {
-    Ok(openapi::from_path(path).chain_err(|| "Unable to parse the input file.")?)
-}
-
-fn to_json(spec: &openapi::Spec) -> Result<String> {
-    Ok(openapi::to_json(&spec).chain_err(|| "Unable to serialize into JSON.")?)
-}
-
-fn to_yaml(spec: &openapi::Spec) -> Result<String> {
-    Ok(openapi::to_yaml(&spec).chain_err(|| "Unable to serialize into YAML.")?)
-}
 
 fn exit_with_error(error: Error, extra_error_message: &str) {
     use std::io::Write;
@@ -42,17 +31,6 @@ fn exit_with_error(error: Error, extra_error_message: &str) {
     std::process::exit(-1);
 }
 
-fn merge(files: Vec<&str>) -> Result<()> {
-    // let specs : Vec<Result<openapi::Spec>> = files.iter().map(|a| openapi::from_path(a)).collect();
-   // let file: String = files.iter().take(1).collect();
-   // let spec: openapi::Spec = validation::validate_file(files.iter().take(1).collect())?;
-/*    for file in files {
-        print!("{:?}", file);
-        let spec = openapi::from_path(file)?;
-        validation::validate(&spec)?;
-    }*/
-    Ok(())
-}
 
 fn main() {
     let file_arg = Arg::with_name("file")
@@ -60,13 +38,7 @@ fn main() {
                 .required(true)
                 .long("OpenAPI spec file") // seems to do nothing
                 .index(1);
-    /*
-    let stdin_arg = Arg::with_name("stdin")
-        .help("Reads from STDIN.")
-        .long_help("Redirect files to the STDIN like  oatool < spec.yml")
-        .required(false)
-        .index(1);
-*/
+
     let application = App::new("oatool")
         .version("0.1.0")
         .about("A tool to manage OpenAPI files")
@@ -91,18 +63,11 @@ fn main() {
                 .required(true)
                 .possible_values(&["openapi_yaml", "openapi_json"])
                 .help("Sets the format to convert the file to.")))
-        // .subcommand(SubCommand::with_name("merge")
-        //     .about("Merges different OpenAPI specs into one")
-        //     .arg(Arg::with_name("files")
-        //         .help("List of files, comma separated ")
-        //         .required(true)
-        //         .multiple(true)
-        //         .index(1)))
         .get_matches();
 
     match application.subcommand() {
         ("validate", Some(arguments)) => {
-            match validation::validate_file(arguments.value_of("file").unwrap()) {
+            match spec::validate_file(arguments.value_of("file").unwrap()) {
                 Ok(spec) => println!("Validation of {} successful!", spec.info.title.unwrap()),
                 Err(e) => exit_with_error(e, "Validation failed"),
             }
@@ -117,30 +82,24 @@ fn main() {
                 Err(e) => exit_with_error(e, &format!("Convertion from {} to {} failed", &from, &to)),
             }
         }
-        ("merge", Some(arguments)) => {
-            match merge(arguments.values_of("files").unwrap().collect()) {
-                Ok(_) => println!("Files merged into one.yml"),
-                Err(e) => exit_with_error(e, "Merging failed."),
-            }
-        }
         _ => println!("{}", application.usage()),
     }
 
+    //TODO: Isn't this the default?
     std::process::exit(0);
 }
 
 
 fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
-        let openapi_spec: openapi::Spec;
-        if from == "openapi" {
-            openapi_spec = parse_spec(&filename)?
+        let openapi_spec = if from == "openapi" {
+            spec::from_path(&filename)?
         } else {
-            openapi_spec = google_discovery::google_to_openapi(google_discovery::from_path(&filename)?)?
-        }
+            google_discovery::google_to_openapi(google_discovery::from_path(&filename)?)?
+        };
 
         if to == "openapi_json" {
-            to_json(&openapi_spec)
+            spec::to_json(&openapi_spec)
         } else {
-            to_yaml(&openapi_spec)
+            spec::to_yaml(&openapi_spec)
         }
 }
