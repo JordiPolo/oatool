@@ -1,6 +1,18 @@
 use std::collections::BTreeMap;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct GoogleSchemas(pub BTreeMap<String, Schema>);
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct GoogleResources(pub BTreeMap<String, Resource>);
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct GoogleParams(pub BTreeMap<String, Parameter>);
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct GoogleMethods(pub Vec<Method>);
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Spec {
     pub id: String,
     pub name: String,
@@ -12,24 +24,54 @@ pub struct Spec {
     pub protocol: String,
     #[serde(rename="basePath")]
     pub base_path: String,
-    pub schemas: BTreeMap<String, Schema>,
-    pub resources: BTreeMap<String, Resource>,
+    pub schemas: GoogleSchemas,
+    pub resources: GoogleResources,
+    pub aliases: Option<Aliases>
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
-pub struct Schema {
-    pub id: String,
-    pub resource: String,
-    #[serde(rename="type")]
-    pub schema_type: String,
-    pub properties: BTreeMap<String, Property>,
+pub struct Aliases {
+    pub slts: BTreeMap<String, SLT>,
+    pub pagination_params: BTreeMap<String, Parameter>
 }
 
+// #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+// pub struct Schema {
+//     pub id: String,
+//     pub resource: String,
+//     #[serde(rename="type")]
+//     pub schema_type: String,
+//     pub properties: BTreeMap<String, Property>,
+// }
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[serde(untagged)]
+pub enum Schema {
+    // TODO: DRY
+    ResponseList {
+        id: Option<String>,
+        resource: Option<String>,
+        #[serde(rename="type")]
+        schema_type: String,
+        items: Reference,
+    },
+    ResponseSingle {
+        id: String,
+        resource: String,
+        #[serde(rename="type")]
+        schema_type: String,
+        properties: BTreeMap<String, Property>,
+    },
+}
+
+#[serde(deny_unknown_fields)]
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Property {
     #[serde(rename="type")]
     pub property_type: String,
-    pub description: String,
+    pub description: Option<String>,
+    pub format: Option<String>,
+    pub items: Option<TypeOrReference>
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -44,48 +86,48 @@ pub struct Method {
     #[serde(rename="httpMethod")]
     pub http_method: String,
     pub description: String,
-    pub parameters: BTreeMap<String, Parameter>,
-    pub response: ArrayOrRef,
+    pub parameters: Option<GoogleParams>,
+    pub response: Response,
     pub slt: Option<SLT>,
 }
-
 
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Parameter {
     pub description: Option<String>,
     pub required: Option<bool>,
-    pub location: String,
+    pub location: Option<String>,
+   // pub location: String,
     #[serde(rename="type")]
     pub param_type: Option<String>,
+  //  pub referenced_data: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(untagged)]
-pub enum ArrayOrRef {
-    SimpleResponse {
+pub enum Response {
+    //TODO: DRY
+    Reference {
         #[serde(rename="$ref")]
         location: String,
     },
-    Response {
+    ResponseList {
+        id: Option<String>,
+        resource: Option<String>,
         #[serde(rename="type")]
         response_type: String,
-        items: ItemRef,
+        items: Reference,
     },
-    Schema {
+    ResponseSingle {
         id: String,
         resource: String,
         #[serde(rename="type")]
-        schema_type: String,
+        response_type: String,
         properties: BTreeMap<String, Property>,
     },
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
-pub struct ItemRef {
-    #[serde(rename="$ref")]
-    pub location: String,
-}
+
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct SLT {
@@ -93,4 +135,45 @@ pub struct SLT {
     percentile_99th: String,
     std_dev: String,
     requests_per_second: i32,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct Reference {
+    #[serde(rename="$ref")]
+    pub location: String,
+}
+
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[serde(untagged)]
+pub enum TypeOrReference {
+    //TODO: DRY
+    Reference {
+        #[serde(rename="$ref")]
+        location: String,
+    },
+    Type {
+        #[serde(rename="type")]
+        items_type: String,
+    }
+}
+
+//TODO: Not used anywhere but may be useful to dry the enums?
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct ResponseList {
+    pub id: Option<String>,
+    pub resource: Option<String>,
+    #[serde(rename="type")]
+    pub response_type: String,
+    pub items: Reference,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct ResponseSingle {
+    pub id: String,
+    pub resource: String,
+    #[serde(rename="type")]
+    pub schema_type: String,
+    pub properties: BTreeMap<String, Property>,
 }

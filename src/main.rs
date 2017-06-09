@@ -1,11 +1,11 @@
 extern crate clap;
 extern crate openapi;
 extern crate google_discovery;
-
 #[macro_use]
 extern crate error_chain;
 
 use clap::{Arg, App, AppSettings, SubCommand};
+use std::io::Write;
 
 mod spec;
 
@@ -20,8 +20,6 @@ pub mod errors {
 use errors::*;
 
 fn exit_with_error(error: Error, extra_error_message: &str) {
-    use std::io::Write;
-
     writeln!(&mut std::io::stderr(), "{}", extra_error_message).unwrap();
     writeln!(&mut std::io::stderr(), "↳ {}", error.to_string()).unwrap();
     for (i, e) in error.iter().enumerate().skip(1) {
@@ -94,7 +92,7 @@ fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
         let openapi_spec = if from == "openapi" {
             spec::from_path(&filename)?
         } else {
-            google_discovery::google_to_openapi(google_discovery::from_path(&filename)?)?
+            openapi::Spec::from(&google_discovery::from_path(&filename)?)
         };
 
         if to == "openapi_json" {
