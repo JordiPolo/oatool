@@ -9,7 +9,7 @@ extern crate openapi;
 extern crate error_chain;
 
 //#[cfg(feature="serde_yaml")]
-extern crate yaml_merge_keys;
+//extern crate yaml_merge_keys;
 
 
 

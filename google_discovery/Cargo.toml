@@ -9,16 +9,13 @@ serde_derive = "1.0"
 serde_json = "1.0"
 serde_yaml = "0.7"
 error-chain = "0.10"
-openapi = { path = "../../openapi" }
-
-#yaml-rust = { path = "../../yaml-rust" }
-#serde_yaml = { path = "../../serde-yaml" }
-
-[dependencies.yaml-merge-keys]
-version = "0.2.0"
-features = ["serde_yaml"]
 
 
-# [dependencies.openapi]
-#   git = "https://github.com/JordiPolo/openapi"
-#   branch = "feature/cloning"
+# [dependencies.yaml-merge-keys]
+# version = "0.2.0"
+# features = ["serde_yaml"]
+
+
+[dependencies.openapi]
+  git = "https://github.com/JordiPolo/openapi"
+  branch = "feature/reorder_output"

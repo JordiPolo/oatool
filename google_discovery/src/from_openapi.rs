@@ -74,6 +74,16 @@ impl<'a> From<&'a GoogleMethods> for openapi::Operations {
                 base_struct.post = Some(operation);
             } else if method.http_method == "REPORT" {
                 base_struct.post = Some(operation);
+            } else if method.http_method == "PUT" {
+                base_struct.put = Some(operation);
+            }  else if method.http_method == "PATCH" {
+                base_struct.patch = Some(operation);
+            } else if method.http_method == "DELETE" {
+                base_struct.delete = Some(operation);
+            } else if method.http_method == "OPTIONS" {
+                base_struct.options = Some(operation);
+            } else if method.http_method == "HEAD" {
+                base_struct.head = Some(operation);
             }
         }
 

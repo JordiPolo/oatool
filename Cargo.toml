@@ -16,11 +16,9 @@ license = "MIT/Apache-2.0"
 clap = "2"
 error-chain = "0.10"
 google_discovery = { path = "google_discovery" }
-yaml-rust = { path = "../yaml-rust" }
-serde_yaml = { path = "../serde-yaml" }
+# yaml-rust = { path = "../yaml-rust" }
+# serde_yaml = { path = "../serde-yaml" }
 
-
-openapi = { path = "../openapi" }
-# [dependencies.openapi]
-#   git = "https://github.com/JordiPolo/openapi"
-#   branch = "feature/cloning"
+[dependencies.openapi]
+  git = "https://github.com/JordiPolo/openapi"
+  branch = "feature/reorder_output"
