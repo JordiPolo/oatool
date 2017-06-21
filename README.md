@@ -5,8 +5,7 @@
 
 Oatool is a command line tool to work with [OpenApi specification](https://github.com/OAI/OpenAPI-Specification/) files.
 
-Currently it can validate their correctness and convert to/from JSON and YAML.
-More functionality like merging diferent files will be added soon.
+It can be used to convert OpenAPI files to Google discovery files and viceversa.
 
 ## Installing
 
@@ -31,15 +30,23 @@ oatool convert openapi.yaml --from=openapi --to=openapi_json
 oatool convert openapi.json --from=openapi --to=openapi_yaml
 ```
 
-### Convert from Google discovery to OpenApi
+### Convert from Google Discovery to OpenAPI
 ```
-oatool convert openapi.json --from=google --to=openapi_yaml
+oatool convert google_discovery_spec.yml --from=google --to=openapi_yaml
 ```
+
+### Convert from OpenAPI to Google Discovery
+```
+oatool convert openapi.yaml --from=openapi --to=google
+```
+
 
 All operations print to stdout. Output can be redirected to an output file:
 ```
-oatool convert openapi.yaml --from=openapi --to=openapi_json > openapi.json
+oatool convert openapi.yaml --from=openapi --to=google > google_discovery_spec.yaml
 ```
+
+
 
 
 ## TODO
@@ -47,7 +54,6 @@ oatool convert openapi.yaml --from=openapi --to=openapi_json > openapi.json
 * Make validation rules explicit, maybe add profiles or CLI flags to control them.
 * Convert from/to other formats: Openapi 3, etc.
 * Add many test documents
-* Support $ref intra document
 * Support $ref inter documents
 * Support <<*
 * Smaller executable

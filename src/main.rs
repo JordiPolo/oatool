@@ -59,7 +59,7 @@ fn main() {
                 .takes_value(true)
                 .require_equals(true)
                 .required(true)
-                .possible_values(&["openapi_yaml", "openapi_json"])
+                .possible_values(&["openapi_yaml", "openapi_json", "google"])
                 .help("Sets the format to convert the file to.")))
         .get_matches();
 
@@ -97,7 +97,10 @@ fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
 
         if to == "openapi_json" {
             spec::to_json(&openapi_spec)
-        } else {
+        } else if to == "openapi_yaml" {
             spec::to_yaml(&openapi_spec)
+        } else { // to google
+        // TODO: should not need thsi chain_err here
+            google_discovery::to_yaml(&google_discovery::Spec::from(&openapi_spec)).chain_err(|| "Unable to serialize into YAML.")
         }
 }

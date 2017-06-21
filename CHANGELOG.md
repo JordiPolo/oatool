@@ -1,3 +1,9 @@
+# 0.4.0
+* Add conversion from OpenAPI to Google discovery
+
+# 0.3.0
+* Rewrite google discovery to openapi into From traits
+
 # 0.2.0
 * Add conversion from Google discovery documents to OpenApi documents
 

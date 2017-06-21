@@ -1,8 +1,8 @@
 [package]
 name = "oatool"
-version = "0.2.0"
+version = "0.4.0"
 authors = ["Jordi Polo Carres <mumismo@gmail.com>"]
-description = "Tool to manage OpenAPI spec files"
+description = "Tool to transform OpenAPI spec files"
 
 documentation = "https://github.com/JordiPolo/oatool"
 homepage = "https://github.com/JordiPolo/oatool"
@@ -16,9 +16,8 @@ license = "MIT/Apache-2.0"
 clap = "2"
 error-chain = "0.10"
 google_discovery = { path = "google_discovery" }
-# yaml-rust = { path = "../yaml-rust" }
-# serde_yaml = { path = "../serde-yaml" }
+
 
 [dependencies.openapi]
-  git = "https://github.com/JordiPolo/openapi"
-  branch = "feature/reorder_output"
+  git = "https://github.com/softprops/openapi"
+  commit = "bc778470"

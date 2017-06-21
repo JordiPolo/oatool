@@ -20,12 +20,14 @@ pub struct Spec {
     pub title: String,
     pub description: String,
     #[serde(rename="documentationLink")]
-    pub documentation_link: String,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub documentation_link: Option<String>,
     pub protocol: String,
     #[serde(rename="basePath")]
     pub base_path: String,
     pub schemas: GoogleSchemas,
     pub resources: GoogleResources,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub aliases: Option<Aliases>
 }
 
@@ -49,7 +51,9 @@ pub struct Aliases {
 pub enum Schema {
     // TODO: DRY
     ResponseList {
+        #[serde(skip_serializing_if="Option::is_none")]
         id: Option<String>,
+        #[serde(skip_serializing_if="Option::is_none")]
         resource: Option<String>,
         #[serde(rename="type")]
         schema_type: String,
@@ -65,12 +69,15 @@ pub enum Schema {
 }
 
 #[serde(deny_unknown_fields)]
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct Property {
     #[serde(rename="type")]
     pub property_type: String,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub format: Option<String>,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub items: Option<TypeOrReference>
 }
 
@@ -88,17 +95,22 @@ pub struct Method {
     pub description: String,
     pub parameters: Option<GoogleParams>,
     pub response: Response,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub slt: Option<SLT>,
 }
 
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct Parameter {
+    #[serde(skip_serializing_if="Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub required: Option<bool>,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub location: Option<String>,
    // pub location: String,
     #[serde(rename="type")]
+    #[serde(skip_serializing_if="Option::is_none")]
     pub param_type: Option<String>,
   //  pub referenced_data: Option<String>,
 }

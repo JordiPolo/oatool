@@ -37,7 +37,7 @@ impl<'a> From<&'a Spec> for openapi::Info {
             title: Some(google_spec.title.clone()),
             description: Some(google_spec.description.clone()),
             version: Some(google_spec.version.clone()),
-            terms_of_service: Some(google_spec.documentation_link.clone()),
+            terms_of_service: google_spec.documentation_link.clone(),
             license: None,
             contact: Some(contact),
         }
@@ -70,9 +70,7 @@ impl<'a> From<&'a GoogleMethods> for openapi::Operations {
             //TODO write the rest, find a better way of doing this
             if method.http_method == "GET" {
                 base_struct.get = Some(operation);
-            } else if method.http_method == "POST" {
-                base_struct.post = Some(operation);
-            } else if method.http_method == "REPORT" {
+            } else if method.http_method == "POST" || method.http_method == "REPORT" {
                 base_struct.post = Some(operation);
             } else if method.http_method == "PUT" {
                 base_struct.put = Some(operation);
@@ -161,9 +159,9 @@ impl<'a> From<&'a Response> for openapi::Response {
     }
 }
 
-// schemas/Region/v1.0.0 -> "#/definitions/Region/v1.0.0"
+// schemas/Region/v1.0.0 -> "#/definitions/Region"
 fn transform_ref_path(google_ref: &str) -> String {
-    let pieces: Vec<&str> = google_ref.split("/").collect();
+    let pieces: Vec<&str> = google_ref.split('/').collect();
     ["#/definitions", pieces[1]].join("/")
 }
 
@@ -193,7 +191,7 @@ impl<'a> From<&'a GoogleParams> for OpenAPIParams {
                 openapi::ParameterOrRef::Parameter {
                     //    openapi::Parameter {
                     name: name.to_string(),
-                    location: param.location.clone().unwrap_or(param_to_param_location(&param)),
+                    location: param.location.clone().unwrap_or_else(|| param_to_param_location(param)),
                     description: param.description.clone(),
                     required: Some(param.required.unwrap_or(true)),
                     format: None,

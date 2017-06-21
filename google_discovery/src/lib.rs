@@ -4,14 +4,13 @@ extern crate serde;
 extern crate serde_json;
 extern crate serde_yaml;
 extern crate openapi;
+extern crate inflector;
 
 #[macro_use]
 extern crate error_chain;
 
 //#[cfg(feature="serde_yaml")]
 //extern crate yaml_merge_keys;
-
-
 
 use std::fs;
 use std::path::Path;
@@ -33,9 +32,8 @@ pub mod errors {
 }
 use errors::*;
 
-mod from_openapi;
-//use from_openapi;
-
+mod from_google_to_openapi;
+mod from_openapi_to_google;
 
 //  pub use merge_keys::merge_keys;
 //#[cfg(feature="serde_yaml")]
@@ -44,6 +42,10 @@ mod from_openapi;
 // TODO:
 // responses
 // SLTs
+
+pub fn to_yaml(spec: &Spec) -> Result<String> {
+    Ok(serde_yaml::to_string(spec).chain_err(|| "Unable to serialize into YAML.")?)
+}
 
 
 /// deserialize an google discovery spec file from a path
@@ -75,121 +77,6 @@ pub fn from_reader<R>(read: R) -> Result<Spec>
 }
 
 
-// impl<'a> From<&'a openapi::Spec> for Spec {
-//     fn from(spec: &'a openapi::Spec) -> Self {
-//         let openapi_spec = spec.clone();
-//         let name = "TODONAME";
-//         let version = openapi_spec.info.version.unwrap();
-
-//         Spec {
-//             id: format!("{}:{}", name, version),
-//             name: name.to_string(),
-//             version: version.clone(),
-//             title: openapi_spec.info.title.unwrap().clone(),
-//             description: openapi_spec.info.description.unwrap().clone(),
-//             documentation_link: openapi_spec.info.terms_of_service.unwrap().clone(),
-//             protocol: "rest".to_string(),
-//             base_path: openapi_spec.base_path.unwrap().clone(),
-//             schemas: openapi_spec_to_google_schemas(&openapi_spec),
-//             resources: openapi_spec_to_google_resources(&openapi_spec),
-//         }
-//     }
-// }
-
-// GOOGLE
-// schemas:
-//   ResourceMonitor:
-//     id: schemas/ResourceMonitor/v1.0.0
-//     resource: resource_monitors
-//     type: object
-//     properties:
-//       uuid:
-//         type: string
-//         description: "Unique identifier for a particular ResourceMonitor (read-only - managed by the service)."
-
-// OPENAPI
-// definitions:
-//   BatchUpdateSearchCriteria:
-//       type: object
-//       description:
-//       properties:
-//         visit_type_se_uuid:
-//           type: string
-//           format: uuid
-//           description:
-
-// fn openapi_spec_to_google_schemas(spec: &openapi::Spec) -> BTreeMap<String, Schema> {
-//     spec.definitions.clone().into_iter().map(|(name, definition)|
-//         (name, Schema::ResponseSingle {
-//             id: format!("schemas/{}", name),
-//             resource: name.clone(),
-//             schema_type: definition.schema_type.clone(),
-//             properties: definition.properties.clone(),
-//         })
-//     ).collect()
-// }
-
-
-// OpenAPI
-// paths:
-//   '/visit_types':
-//     get:
-//       tags:
-//         - visit_types
-//         - master_data
-//       summary: Retrieves master list of pre-configured site monitoring visit types
-//       description: Retrieves master list of pre-configured types of site monitoring visit
-//       produces:
-//         - application/json
-//       parameters: []
-//       responses:
-//         '200':
-//           description: List of available visit types retrieved.
-//           schema:
-//             type: array
-//             items:
-//                 $ref: '#/definitions/VisitType'
-
-// GOOGLE
-// resources:
-//   resource_monitors:
-//     methods:
-//       index:
-//         id: resource_monitors.index
-//         path: resource_monitors
-//         httpMethod: GET
-//         description: "A filtered collection of resource monitors"
-//         parameters:
-//           host:
-//             descript
-//        response:
-//   type: array
-//   items:
-//     $ref: schemas/ResourceMonitor/v1.0.0
-// fn openapi_spec_to_google_resources(spec: &openapi::Spec) -> BTreeMap<String, Resource> {
-//     spec.paths.iter().map(|(path, operations)|
-//         (path, to_google_resource(path, operations))
-//     ).collect()
-// }
-
-// fn to_google_resource(path: String, operations: openapi::Operations) -> Resource {
-//     let mut methods = BTreeMap::new();
-//     methods.insert("get".to_string(), to_google_method(path, operations.get.unwrap()));
-//     Resource { methods }
-// }
-
-// fn to_google_method(path: String, operation: openapi::Operation) -> Method {
-//     Method {
-//         id: operation.operation_id.unwrap(),
-//         path: path,
-//         http_method: "get".to_string(),
-//         description: operation.description.unwrap(),
-//         parameters: operation.parameters.unwrap(),
-//         response: operation.responses,
-//         slt: None
-//     }
-// }
-
 
 
 impl<'a> From<&'a Spec> for openapi::Spec {
@@ -200,7 +87,7 @@ impl<'a> From<&'a Spec> for openapi::Spec {
             .0
             .iter()
             .map(|(schema_name, google_schema)| {
-                (schema_name.to_string(), schema_to_response(&google_schema).schema.unwrap())
+                (schema_name.to_string(), schema_to_response(google_schema).schema.unwrap())
             })
             .collect();
 
@@ -244,33 +131,29 @@ impl<'a> From<&'a Spec> for openapi::Spec {
 
 
 
+impl<'a> From<&'a openapi::Spec> for Spec {
+    fn from(spec: &'a openapi::Spec) -> Self {
+        let openapi_spec = spec.clone();
+        let name = spec.info.title.clone().unwrap().to_lowercase();
+        let version = openapi_spec.info.version.unwrap();
+
+        Spec {
+            id: format!("{}:{}", name, version),
+            name: name.to_string(),
+            version: version.clone(),
+            title: openapi_spec.info.title.unwrap().clone(),
+            description: openapi_spec.info.description.unwrap().clone(),
+            documentation_link: openapi_spec.info.terms_of_service.clone(),
+            protocol: "rest".to_string(),
+            base_path: openapi_spec.base_path.unwrap().clone(),
+            schemas: from_openapi_to_google::openapi_definitions_to_google_schemas(&openapi_spec.definitions.unwrap()),
+            resources: from_openapi_to_google::openapi_paths_to_google_resources(&openapi_spec.paths, &openapi_spec.parameters.unwrap()),
+            aliases: None, //from_openapi_to_google::openapi_parameters_to_aliases(&openapi_spec.parameters),
+        }
+    }
+}
 
 
-
-
-
-
-
-
-
-// fn openapi_params_to_google_params(openapi_params: Vec<openapi::ParameterOrRef>)
-//                                    -> BTreeMap<String, schema::Parameter> {
-//     if let openapi::ParameterOrRef::Parameter(params) = openapi_params {
-//         params.iter()
-//             .map(|openapi_param| {
-//                 (openapi_param.name,
-//                 schema::Parameter {
-//                     location: openapi_param.location.clone(),
-//                     description: openapi_param.description.clone(),
-//                     required: openapi_param.required,
-//                     param_type: openapi_param.param_type.clone().or_else(|| Some("integer".to_string())),
-//                 }
-//                 )
-//             })
-//             .collect()
-//     }
-
-// }
 
 
 
