@@ -96,30 +96,32 @@ impl<'a> From<&'a Method> for openapi::Operation {
             description: Some(method.description.clone()),
             operation_id: Some(method.id.to_string()),
             parameters: method.clone().parameters.map(|param| OpenAPIParams::from(&param).0),
-            responses: OpenAPIResponses::from(&method.response).0,
+            responses: from_google_to_openapi_responses(&method.response).0,
             ..Default::default()
         }
     }
 }
 
 
+fn from_google_to_openapi_responses(response: &Option<Response>) -> OpenAPIResponses {
+    let mut responses = DEFAULT_RESPONSES.iter()
+        .map(|&(code, description)| {
+            (code.to_string(),
+                openapi::Response {
+                    description: description.to_string(),
+                    schema: None,
+                })
+        })
+        .collect::<BTreeMap<_, _>>();
 
-impl<'a> From<&'a Response> for OpenAPIResponses {
-    fn from(response: &'a Response) -> Self {
-        let mut responses = DEFAULT_RESPONSES.iter()
-            .map(|&(code, description)| {
-                (code.to_string(),
-                 openapi::Response {
-                     description: description.to_string(),
-                     schema: None,
-                 })
-            })
-            .collect::<BTreeMap<_, _>>();
-
-         responses.insert("200".to_string(), openapi::Response::from(response));
-        OpenAPIResponses(responses)
+    if response.is_some() {
+        responses.insert("200".to_string(), openapi::Response::from(&response.clone().unwrap()));
     }
+    OpenAPIResponses(responses)
+
 }
+
+
 
 impl<'a> From<&'a Response> for openapi::Response {
     fn from(response: &'a Response) -> Self {
@@ -173,7 +175,7 @@ fn google_schema_to_openapi_schema(properties: &BTreeMap<String, Property>)
             (property_name.to_string(),
              openapi::Schema {
                  description: property.description.clone(),
-                 schema_type: Some(property.property_type.clone()),
+                 schema_type: property.property_type.clone(),
                  ..Default::default()
              })
         })
@@ -195,7 +197,7 @@ impl<'a> From<&'a GoogleParams> for OpenAPIParams {
                     description: param.description.clone(),
                     required: Some(param.required.unwrap_or(true)),
                     format: None,
-                    param_type: param.param_type.clone().or_else(|| Some("string".to_string())),
+                    param_type: param.property_type.clone().or_else(|| Some("string".to_string())),
                     schema: None,
                     unique_items: None, // ..Default::default()
                 }
@@ -206,7 +208,7 @@ impl<'a> From<&'a GoogleParams> for OpenAPIParams {
 }
 
 
-fn param_to_param_location(param: &Parameter) -> String {
+fn param_to_param_location(param: &Property) -> String {
     if param.required.unwrap_or(true) {
         "path".to_string()
     } else {

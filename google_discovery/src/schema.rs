@@ -7,7 +7,7 @@ pub struct GoogleSchemas(pub BTreeMap<String, Schema>);
 pub struct GoogleResources(pub BTreeMap<String, Resource>);
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
-pub struct GoogleParams(pub BTreeMap<String, Parameter>);
+pub struct GoogleParams(pub BTreeMap<String, Property>);
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct GoogleMethods(pub Vec<Method>);
@@ -33,8 +33,8 @@ pub struct Spec {
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Aliases {
-    pub slts: BTreeMap<String, SLT>,
-    pub pagination_params: BTreeMap<String, Parameter>
+    pub slts: Option<BTreeMap<String, SLT>>,
+    pub pagination_params: Option<BTreeMap<String, Property>>
 }
 
 // #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -72,13 +72,21 @@ pub enum Schema {
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct Property {
     #[serde(rename="type")]
-    pub property_type: String,
+    pub property_type: Option<String>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub format: Option<String>,
     #[serde(skip_serializing_if="Option::is_none")]
-    pub items: Option<TypeOrReference>
+    pub items: Option<TypeOrReference>,
+    // Are default and required valid in this context? Maybe properties can be Properties or Params
+    #[serde(rename="default")]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub the_default: Option<bool>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub required: Option<bool>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub location: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -93,27 +101,30 @@ pub struct Method {
     #[serde(rename="httpMethod")]
     pub http_method: String,
     pub description: String,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub parameters: Option<GoogleParams>,
-    pub response: Response,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub response: Option<Response>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub slt: Option<SLT>,
 }
 
-
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
-pub struct Parameter {
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub description: Option<String>,
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub required: Option<bool>,
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub location: Option<String>,
-   // pub location: String,
-    #[serde(rename="type")]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub param_type: Option<String>,
-  //  pub referenced_data: Option<String>,
-}
+//This is unused because it seems that Parameters can have everything properties can have
+// Probably this is incorrect but hey
+// #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
+// pub struct Parameter {
+//     #[serde(skip_serializing_if="Option::is_none")]
+//     pub description: Option<String>,
+//     #[serde(skip_serializing_if="Option::is_none")]
+//     pub required: Option<bool>,
+//     #[serde(skip_serializing_if="Option::is_none")]
+//     pub location: Option<String>,
+//    // pub location: String,
+//     #[serde(rename="type")]
+//     #[serde(skip_serializing_if="Option::is_none")]
+//     pub param_type: Option<String>,
+//   //  pub referenced_data: Option<String>,
+// }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(untagged)]

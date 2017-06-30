@@ -166,7 +166,7 @@ fn google_schema_to_openapi_schema(properties: &BTreeMap<String, Property>)
             (property_name.to_string(),
              openapi::Schema {
                  description: property.description.clone(),
-                 schema_type: Some(property.property_type.clone()),
+                 schema_type: property.property_type.clone(),
                  ..Default::default()
              })
         })
