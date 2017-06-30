@@ -1,3 +1,6 @@
+# 0.5.0
+* Add more verbs to the convertion OpenPI to google
+
 # 0.4.0
 * Add conversion from OpenAPI to Google discovery
 
