@@ -15,10 +15,6 @@ If you do not want to setup Rust, this repository contains static linked binarie
 
 ## Using
 
-### Validate
-```
-oatool validate openapi.yaml
-```
 
 ### Convert to JSON
 ```

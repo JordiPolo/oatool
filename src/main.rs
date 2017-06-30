@@ -19,7 +19,7 @@ pub mod errors {
 }
 use errors::*;
 
-fn exit_with_error(error: Error, extra_error_message: &str) {
+fn exit_with_error(error: &Error, extra_error_message: &str) {
     writeln!(&mut std::io::stderr(), "{}", extra_error_message).unwrap();
     writeln!(&mut std::io::stderr(), "↳ {}", error.to_string()).unwrap();
     for (i, e) in error.iter().enumerate().skip(1) {
@@ -41,9 +41,6 @@ fn main() {
         .version("0.1.0")
         .about("A tool to manage OpenAPI files")
         .setting(AppSettings::AllowExternalSubcommands)
-        .subcommand(SubCommand::with_name("validate")
-            .about("Validates an OpenAPI spec file following opionated rules")
-            .arg(&file_arg))
         .subcommand(SubCommand::with_name("convert")
             .about("Translates an API spec file to other format.")
             .arg(&file_arg)
@@ -64,12 +61,12 @@ fn main() {
         .get_matches();
 
     match application.subcommand() {
-        ("validate", Some(arguments)) => {
-            match spec::validate_file(arguments.value_of("file").unwrap()) {
-                Ok(spec) => println!("Validation of {} successful!", spec.info.title.unwrap()),
-                Err(e) => exit_with_error(e, "Validation failed"),
-            }
-        }
+        // ("validate", Some(arguments)) => {
+        //     match spec::validate_file(arguments.value_of("file").unwrap()) {
+        //         Ok(spec) => println!("Validation of {} successful!", spec.info.title.unwrap()),
+        //         Err(e) => exit_with_error(&e, "Validation failed"),
+        //     }
+        // }
         ("convert", Some(arguments)) => {
             let filename = arguments.value_of("file").unwrap();
             let from = arguments.value_of("from").unwrap();
@@ -77,7 +74,7 @@ fn main() {
 
             match convert(filename, from, to) {
                 Ok(text) => println!("{}", text),
-                Err(e) => exit_with_error(e, &format!("Convertion from {} to {} failed", &from, &to)),
+                Err(e) => exit_with_error(&e, &format!("Convertion from {} to {} failed", &from, &to)),
             }
         }
         _ => println!("{}", application.usage()),
@@ -90,9 +87,9 @@ fn main() {
 
 fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
         let openapi_spec = if from == "openapi" {
-            spec::from_path(&filename)?
+            spec::from_path(filename)?
         } else {
-            openapi::Spec::from(&google_discovery::from_path(&filename)?)
+            openapi::Spec::from(&google_discovery::from_path(filename)?)
         };
 
         if to == "openapi_json" {
@@ -101,6 +98,6 @@ fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
             spec::to_yaml(&openapi_spec)
         } else { // to google
         // TODO: should not need thsi chain_err here
-            google_discovery::to_yaml(&google_discovery::Spec::from(&openapi_spec)).chain_err(|| "Unable to serialize into YAML.")
+            google_discovery::to_yaml(&google_discovery::Spec::from(openapi_spec)).chain_err(|| "Unable to serialize into YAML.")
         }
 }

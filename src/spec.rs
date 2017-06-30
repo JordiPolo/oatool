@@ -16,7 +16,7 @@ pub fn to_yaml(spec: &openapi::Spec) -> Result<String> {
     Ok(openapi::to_yaml(&spec).chain_err(|| "Unable to serialize into YAML.")?)
 }
 
-
+/*
 pub fn validate_file(path: &str) -> Result<openapi::Spec> {
     validate(&from_path(path)?)
 }
@@ -105,3 +105,4 @@ fn validate_method(path: &str,
     Ok(())
 }
 
+*/

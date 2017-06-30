@@ -131,24 +131,24 @@ impl<'a> From<&'a Spec> for openapi::Spec {
 
 
 
-impl<'a> From<&'a openapi::Spec> for Spec {
-    fn from(spec: &'a openapi::Spec) -> Self {
-        let openapi_spec = spec.clone();
-        let name = spec.info.title.clone().unwrap().to_lowercase();
-        let version = openapi_spec.info.version.unwrap();
+impl<'a> From<openapi::Spec> for Spec {
+    fn from(spec: openapi::Spec) -> Self {
+        let title = spec.info.title.unwrap();
+        let name = title.to_lowercase();
+        let version = spec.info.version.unwrap();
 
         Spec {
             id: format!("{}:{}", name, version),
-            name: name.to_string(),
-            version: version.clone(),
-            title: openapi_spec.info.title.unwrap().clone(),
-            description: openapi_spec.info.description.unwrap().clone(),
-            documentation_link: openapi_spec.info.terms_of_service.clone(),
+            name: name,
+            version: version,
+            title: title,
+            description: spec.info.description.unwrap(),
+            documentation_link: spec.info.terms_of_service,
             protocol: "rest".to_string(),
-            base_path: openapi_spec.base_path.unwrap().clone(),
-            schemas: from_openapi_to_google::openapi_definitions_to_google_schemas(&openapi_spec.definitions.unwrap()),
-            resources: from_openapi_to_google::openapi_paths_to_google_resources(&openapi_spec.paths, &openapi_spec.parameters.unwrap()),
-            aliases: None, //from_openapi_to_google::openapi_parameters_to_aliases(&openapi_spec.parameters),
+            base_path: spec.base_path.unwrap(),
+            schemas: from_openapi_to_google::openapi_definitions_to_google_schemas(spec.definitions.unwrap()),
+            resources: from_openapi_to_google::openapi_paths_to_google_resources(spec.paths, &spec.parameters.unwrap()),
+            aliases: None, //from_openapi_to_google::openapi_parameters_to_aliases(&spec.parameters),
         }
     }
 }

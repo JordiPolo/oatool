@@ -21,3 +21,7 @@ google_discovery = { path = "google_discovery" }
 [dependencies.openapi]
   git = "https://github.com/softprops/openapi"
   commit = "bc778470"
+
+
+[profile.release]
+lto = true
