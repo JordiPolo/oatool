@@ -1,3 +1,7 @@
+# 0.6.0
+* Allow to pass externally if a property is required or not, to support body parameters.
+* Add request to methods in the Google spec. It is possible to DRY parameters like that.
+
 # 0.5.0
 * Add more verbs to the convertion OpenPI to google
 

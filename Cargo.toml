@@ -1,6 +1,6 @@
 [package]
 name = "oatool"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Jordi Polo Carres <mumismo@gmail.com>"]
 description = "Tool to transform OpenAPI spec files"
 

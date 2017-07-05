@@ -104,9 +104,17 @@ pub struct Method {
     #[serde(skip_serializing_if="Option::is_none")]
     pub parameters: Option<GoogleParams>,
     #[serde(skip_serializing_if="Option::is_none")]
+    pub request: Option<MethodRequest>,
+    #[serde(skip_serializing_if="Option::is_none")]
     pub response: Option<Response>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub slt: Option<SLT>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct MethodRequest {
+    #[serde(rename="$ref")]
+    pub location: String,
 }
 
 //This is unused because it seems that Parameters can have everything properties can have

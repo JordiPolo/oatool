@@ -18,7 +18,10 @@ pub fn openapi_definitions_to_google_schemas(
                     id: format!("schemas/{}", name),
                     resource: name.to_snake_case().to_plural(),
                     schema_type: schema_type,
-                    properties: openapi_schema_to_google_properties(properties),
+                    properties: openapi_schemas_to_google_properties(
+                        properties,
+                        &definition.required,
+                    ),
                 },
             )
         })
@@ -69,7 +72,7 @@ pub fn openapi_paths_to_google_resources(
             .map(|(resource_name, path_operation_hash)| {
                 (
                     resource_name,
-                    to_google_resource(path_operation_hash, &parameters),
+                    to_google_resource(path_operation_hash, parameters),
                 )
             })
             .collect(),
@@ -122,20 +125,78 @@ fn to_google_method(
     method_name: &str,
     parameters: &BTreeMap<String, openapi::Parameter>,
 ) -> Method {
-    // TODO: support multiple 2xx here
-    Method {
-        // We will need to have the operation ids to be added to the spec to do this.
-        id: operation.operation_id.unwrap(),
-        path: path,
-        http_method: method_name.to_string(),
-        description: operation.description.unwrap(),
-        parameters: operation.parameters.map(|param| {
-            openapi_param_to_google_param(param, parameters)
-        }),
-        response: get_successful_response(operation.responses).map(
-            openapi_response_to_google_response,
-        ),
-        slt: None,
+
+    // TODO: cleanup, doing the Method twice because I'm lazy
+    if operation.parameters.is_none() {
+        Method {
+            // We will need to have the operation ids to be added to the spec to do this.
+            id: operation.operation_id.unwrap(),
+            path: path,
+            http_method: method_name.to_string(),
+            description: operation.description.unwrap(),
+            parameters: None,
+            response: get_successful_response(operation.responses).map(
+                openapi_response_to_google_response,
+            ),
+            request: None,
+            slt: None,
+        }
+    } else {
+
+        // If there are parameters it is possible that part of these
+        // are defined somewhere else and here we only define
+        // But it is also possible that we mix both the having somewhere
+        // else but still defining some parameters here.
+
+        // TODO: Many clones here, I don't know what I'm doing
+        let my_params = operation.parameters.clone().unwrap();
+
+        let has_request = my_params.into_iter().clone().find(
+            |param| match *param {
+                openapi::ParameterOrRef::Parameter {
+                    ref location,
+                    ref schema,
+                    ..
+                } => {
+                    if location == "body" && schema.is_some() {
+                        let the_schema = schema.clone().unwrap();
+                        the_schema.ref_path.is_some()
+                    } else {
+                        false
+                    }
+                }
+                openapi::ParameterOrRef::Ref { .. } => false,
+            },
+        );
+
+
+        let request = match has_request.clone() {
+            Some(openapi::ParameterOrRef::Parameter { schema, .. }) => {
+                Some(MethodRequest {
+                    location: transform_ref_path(&schema.unwrap().ref_path.unwrap()),
+                })
+            }
+            _ => None,
+        };
+
+        // delete the parameter which is defined in the request, so we do not have it twice.
+        let mut params = operation.parameters.clone().unwrap();
+        params.retain(|param| Some(param.clone()) != has_request);
+
+        // TODO: support multiple 2xx here
+        Method {
+            // We will need to have the operation ids to be added to the spec to do this.
+            id: operation.operation_id.unwrap(),
+            path: path,
+            http_method: method_name.to_string(),
+            description: operation.description.unwrap(),
+            parameters: Some(openapi_param_to_google_param(params, parameters)),
+            response: get_successful_response(operation.responses).map(
+                openapi_response_to_google_response,
+            ),
+            request: request,
+            slt: None,
+        }
     }
 }
 
@@ -212,21 +273,30 @@ fn openapi_param_to_google_param(
     GoogleParams(google_params)
 }
 
-fn openapi_schema_to_google_properties(
+fn openapi_schemas_to_google_properties(
     schemas: BTreeMap<String, openapi::Schema>,
+    required: &Option<Vec<String>>,
 ) -> BTreeMap<String, Property> {
 
     schemas
         .into_iter()
         .map(|(schema_name, schema)| {
-            // println!("{}", schema_name);
             (
                 schema_name.to_string(),
                 Property {
                     property_type: schema.schema_type,
                     description: schema.description,
+                    // required can be passed from the parent
+                    required: Some(required.clone().map_or(false, |vector| {
+                        vector.iter().any(|x| **x == schema_name)
+                    })),
                     format: None,
-                    items: None,
+                    // Because there can be items refering other definition.
+                    items: schema.items.map(|items| {
+                        TypeOrReference::Reference {
+                            location: transform_ref_path(&items.ref_path.unwrap()),
+                        }
+                    }),
                     ..Default::default()
                 },
             )

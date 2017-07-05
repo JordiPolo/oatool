@@ -9,11 +9,11 @@ pub fn from_path(path: &str) -> Result<openapi::Spec> {
 }
 
 pub fn to_json(spec: &openapi::Spec) -> Result<String> {
-    Ok(openapi::to_json(&spec).chain_err(|| "Unable to serialize into JSON.")?)
+    Ok(openapi::to_json(spec).chain_err(|| "Unable to serialize into JSON.")?)
 }
 
 pub fn to_yaml(spec: &openapi::Spec) -> Result<String> {
-    Ok(openapi::to_yaml(&spec).chain_err(|| "Unable to serialize into YAML.")?)
+    Ok(openapi::to_yaml(spec).chain_err(|| "Unable to serialize into YAML.")?)
 }
 
 /*
