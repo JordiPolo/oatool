@@ -15,8 +15,9 @@ license = "MIT/Apache-2.0"
 [dependencies]
 clap = "2"
 error-chain = "0.10"
-google_discovery = { path = "google_discovery" }
-
+google_discovery_spec = { path = "google_discovery_spec" }
+convert_google_spec = { path = "convert_google_spec" }
+openapi_validation = { path = "openapi_validation" }
 
 [dependencies.openapi]
   git = "https://github.com/softprops/openapi"

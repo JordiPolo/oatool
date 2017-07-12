@@ -1,0 +1,12 @@
+[package]
+name = "openapi_validation"
+version = "0.1.0"
+authors = ["Jordi Polo <mumismo@gmail.com>"]
+
+[dependencies]
+error-chain = "0.10"
+
+
+[dependencies.openapi]
+  git = "https://github.com/softprops/openapi"
+  commit = "bc778470"

@@ -1,31 +1,27 @@
 use openapi;
-use schema::*;
-//mod openapi_to_google;
-//use self::openapi_to_google::*;
 use std::collections::BTreeMap;
 use inflector::Inflector;
+use google_discovery_spec::schema::*;
 
+pub fn openapi_spec_to_google(spec: openapi::Spec) -> Spec {
+    let title = spec.info.title.unwrap();
+    let name = title.to_lowercase();
+    let version = spec.info.version.unwrap();
 
-impl<'a> From<openapi::Spec> for Spec {
-    fn from(spec: openapi::Spec) -> Self {
-        let title = spec.info.title.unwrap();
-        let name = title.to_lowercase();
-        let version = spec.info.version.unwrap();
-
-        Spec {
-            id: format!("{}:{}", name, version),
-            name: name,
-            version: version,
-            title: title,
-            description: spec.info.description.unwrap(),
-            documentation_link: spec.info.terms_of_service,
-            protocol: "rest".to_string(),
-            base_path: spec.base_path.unwrap(),
-            schemas: openapi_definitions_to_google_schemas(spec.definitions.unwrap()),
-            resources: openapi_paths_to_google_resources(spec.paths, &spec.parameters.unwrap()),
-            aliases: None, //from_openapi_to_google::openapi_parameters_to_aliases(&spec.parameters),
-        }
+    Spec {
+        id: format!("{}:{}", name, version),
+        name: name,
+        version: version,
+        title: title,
+        description: spec.info.description.unwrap(),
+        documentation_link: spec.info.terms_of_service,
+        protocol: "rest".to_string(),
+        base_path: spec.base_path.unwrap(),
+        schemas: openapi_definitions_to_google_schemas(spec.definitions.unwrap()),
+        resources: openapi_paths_to_google_resources(spec.paths, &spec.parameters.unwrap()),
+        aliases: None, //from_openapi_to_google::openapi_parameters_to_aliases(&spec.parameters),
     }
+
 }
 
 

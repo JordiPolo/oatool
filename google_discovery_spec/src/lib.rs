@@ -3,8 +3,6 @@ extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_yaml;
-extern crate openapi;
-extern crate inflector;
 
 #[macro_use]
 extern crate error_chain;
@@ -17,7 +15,7 @@ use std::path::Path;
 use std::io::Read;
 
 
-mod schema;
+pub mod schema;
 pub use schema::*;
 
 pub mod errors {
@@ -30,9 +28,6 @@ pub mod errors {
     }
 }
 use errors::*;
-
-mod google_to_openapi;
-mod openapi_to_google;
 
 //  pub use merge_keys::merge_keys;
 //#[cfg(feature="serde_yaml")]

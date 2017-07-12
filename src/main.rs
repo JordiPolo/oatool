@@ -1,6 +1,9 @@
 extern crate clap;
 extern crate openapi;
-extern crate google_discovery;
+extern crate convert_google_spec;
+extern crate google_discovery_spec;
+extern crate openapi_validation;
+
 #[macro_use]
 extern crate error_chain;
 
@@ -13,11 +16,15 @@ pub mod errors {
     error_chain!{
         foreign_links {
             Parse(::openapi::errors::Error);
-            Convert(::google_discovery::errors::Error);
+            GoogleSpec(::google_discovery_spec::errors::Error);
+            Validation(::openapi_validation::errors::Error);
         }
     }
 }
 use errors::*;
+
+use openapi_validation::OpenAPIValidation;
+
 
 fn exit_with_error(error: &Error, extra_error_message: &str) {
     writeln!(&mut std::io::stderr(), "{}", extra_error_message).unwrap();
@@ -41,6 +48,10 @@ fn main() {
         .version("0.1.0")
         .about("A tool to manage OpenAPI files")
         .setting(AppSettings::AllowExternalSubcommands)
+        .subcommand(SubCommand::with_name("validate")
+            .about("Validates an OpenAPI file.")
+            .arg(&file_arg)
+        )
         .subcommand(SubCommand::with_name("convert")
             .about("Translates an API spec file to other format.")
             .arg(&file_arg)
@@ -61,12 +72,15 @@ fn main() {
         .get_matches();
 
     match application.subcommand() {
-        // ("validate", Some(arguments)) => {
-        //     match spec::validate_file(arguments.value_of("file").unwrap()) {
-        //         Ok(spec) => println!("Validation of {} successful!", spec.info.title.unwrap()),
-        //         Err(e) => exit_with_error(&e, "Validation failed"),
-        //     }
-        // }
+        ("validate", Some(arguments)) => {
+            let filename = arguments.value_of("file").unwrap();
+            let openapi_spec = spec::from_path(filename).unwrap();
+            let options = openapi_validation::ValidationOptions{ support_google_spec: false };
+            match openapi_spec.validate(&options).chain_err(|| "error") {
+                Ok(_) => println!("Validation successful!"),
+                Err(e) => exit_with_error(&e, "Validation failed"),
+            }
+        }
         ("convert", Some(arguments)) => {
             let filename = arguments.value_of("file").unwrap();
             let from = arguments.value_of("from").unwrap();
@@ -89,7 +103,8 @@ fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
         let openapi_spec = if from == "openapi" {
             spec::from_path(filename)?
         } else {
-            openapi::Spec::from(&google_discovery::from_path(filename)?)
+            convert_google_spec::google_to_openapi::google_spec_to_openapi(&google_discovery_spec::from_path(filename)?)
+           // openapi::Spec::from(&google_discovery::from_path(filename)?)
         };
 
         if to == "openapi_json" {
@@ -98,6 +113,6 @@ fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
             spec::to_yaml(&openapi_spec)
         } else { // to google
         // TODO: should not need thsi chain_err here
-            google_discovery::to_yaml(&google_discovery::Spec::from(openapi_spec)).chain_err(|| "Unable to serialize into YAML.")
+            google_discovery_spec::to_yaml(&convert_google_spec::openapi_to_google::openapi_spec_to_google(openapi_spec)).chain_err(|| "Unable to serialize into YAML.")
         }
 }
