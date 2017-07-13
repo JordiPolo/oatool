@@ -315,9 +315,14 @@ fn openapi_schemas_to_google_properties(
                     format: None,
                     // Because there can be items refering other definition.
                     items: schema.items.map(|items| {
-                        TypeOrReference::Reference {
-                            location: transform_ref_path(&items.ref_path.unwrap()),
-                        }
+                        match items.ref_path.as_ref() {
+                            Some(path) => TypeOrReference::Reference {
+                                location: transform_ref_path(&items.ref_path.as_ref().unwrap()),
+                            },
+                            None => TypeOrReference::Type {
+                                items_type: items.schema_type.clone().unwrap(),
+                            },
+                       }
                     }),
                     ..Default::default()
                 },

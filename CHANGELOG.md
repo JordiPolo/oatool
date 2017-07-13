@@ -1,3 +1,7 @@
+# 0.6.1
+* Add support for arrays with items specified locally instead of as
+  references
+
 # 0.6.0
 * Allow to pass externally if a property is required or not, to support body parameters.
 * Add request to methods in the Google spec. It is possible to DRY parameters like that.

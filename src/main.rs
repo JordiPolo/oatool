@@ -45,7 +45,7 @@ fn main() {
                 .index(1);
 
     let application = App::new("oatool")
-        .version("0.1.0")
+        .version("0.6.1")
         .about("A tool to manage OpenAPI files")
         .setting(AppSettings::AllowExternalSubcommands)
         .subcommand(SubCommand::with_name("validate")
