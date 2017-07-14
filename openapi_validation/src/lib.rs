@@ -1,38 +1,104 @@
 extern crate openapi;
+extern crate regex;
 
-#[macro_use]
-extern crate error_chain;
-
-mod validation_results;
-use validation_results::ValidationResults;
-
-
-pub mod errors {
-    error_chain!{
-        errors {
-            ValidationError(error_string: String) {
-                description("OpenAPI validation error")
-                display("OpenAPI validation error: '{}'", error_string)
-            }
-        }
-    }
-}
-use errors::*;
+use std::fmt::Debug;
+use regex::Regex;
 
 pub struct ValidationOptions {
     pub support_google_spec: bool,
 }
 
 pub trait OpenAPIValidation {
-    fn validate(&self, options: &ValidationOptions, results: &mut ValidationResults) {}
+    fn validate(&self, options: &ValidationOptions) -> ValidationResults;
 }
 
 
+type ValidationResult = Result<(), String>;
 
-trait Assertions {
-    fn assert_existence(&self, results: &mut ValidationResults) {}
-    fn assert_eq(&self, value: &str, results: &mut ValidationResults) {}
-    fn assert_array_value(&self, value: &str, results: &mut ValidationResults) {}
+#[derive(Debug)]
+pub struct ValidationResults {
+    errors: Vec<String>,
+    warnings: Vec<String>,
+}
+
+use std::fmt;
+impl fmt::Display for ValidationResults {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        //TODO: colors
+        if !self.errors.is_empty() {
+            write!(f, "\nerrors\n")?;
+            for error in &self.errors {
+                write!(f, "    {}\n", error)?;
+            }
+        }
+
+        if !self.warnings.is_empty() {
+            write!(f, "\nwarnings\n")?;
+            for warning in &self.warnings {
+                write!(f, "    {}\n", warning)?;
+            }
+        }
+
+        write!(f, "")
+    }
+}
+
+
+impl ValidationResults {
+    pub fn new() -> ValidationResults {
+        ValidationResults {
+            errors: vec![],
+            warnings: vec![],
+        }
+    }
+    pub fn append_error(&mut self, value: &str) {
+        self.errors.push(value.to_string());
+    }
+
+    pub fn append_warning(&mut self, value: &str) {
+        self.warnings.push(value.to_string());
+    }
+
+    pub fn assert(&mut self, result: &ValidationResult) {
+        result.as_ref().map_err(|e| self.append_error(e));
+    }
+
+    pub fn assert_warn(&mut self, result: &ValidationResult) {
+        result.as_ref().map_err(|e| self.append_warning(e));
+    }
+
+    pub fn validate<T>(&mut self, element: &T, options: &ValidationOptions)
+    where
+        T: OpenAPIValidation,
+    {
+        let mut errors = element.validate(options).errors;
+        self.errors.append(&mut errors);
+    }
+}
+
+
+trait Assert {
+    type Data: Debug;
+
+    fn data(&self) -> Option<Self::Data>;
+
+    fn name(&self) -> &str;
+
+    fn eq<T>(&self, value: T) -> ValidationResult
+    where
+        Self::Data: PartialEq<T>,
+        T: Debug,
+    {
+        match self.data() {
+            Some(ref a) if a == &value => Ok(()),
+            _ => Err(format!(
+                "Expected {} to be {:?} but it was {:?}",
+                self.name(),
+                value,
+                self.data()
+            )),
+        }
+    }
 }
 
 
@@ -51,45 +117,83 @@ impl<T> Field<T> {
     }
 }
 
-impl<'a> Assertions for Field<&'a String> {
-    fn assert_eq(&self, value: &str, results: &mut ValidationResults) {
-         if self.data != value {
-            let error = format!("Expected {} to be {} but it was {:?}", self.name, value, self);
-            results.append_error(error);
+
+impl<'a> Assert for Field<&'a String> {
+    type Data = &'a String;
+
+    fn data(&self) -> Option<Self::Data> {
+        Some(self.data)
+    }
+
+    fn name(&self) -> &str {
+        self.name.as_str()
+    }
+}
+
+
+impl<'a> Assert for Field<&'a Option<String>> {
+    type Data = &'a String;
+
+    fn data(&self) -> Option<Self::Data> {
+        self.data.as_ref()
+    }
+
+    fn name(&self) -> &str {
+        self.name.as_str()
+    }
+}
+impl<'a> Field<&'a Option<String>> {
+    fn is_match(&self, regex: &Regex) -> ValidationResult {
+        match self.data() {
+            Some(string) => {
+                if !regex.is_match(string) {
+                    Err(format!(
+                        "The value {} for {} does not follow the proper format of the guidelines",
+                        string,
+                        self.name()
+                    ))
+                } else {
+                    Ok(())
+                }
+            }
+            None => Ok(()), // Really not ok but some other test should already complain about this.
         }
     }
 }
 
-impl<'a> Assertions for Field<&'a Option<String>> {
-    fn assert_eq(&self, value: &str, results: &mut ValidationResults) {
-         if self.data.as_ref().unwrap() != value {
-            let error = format!("Expected {} to be {} but it was {:?}", self.name, value, self);
-            results.append_error(error);
-        }
-    }
-    fn assert_existence(&self, results: &mut ValidationResults)  {
-        if self.data.is_none() {
-            let error = format!("{} does not exist in the spec. It needs to be set to a value.", self.name);
-            results.append_error(error);
-        }
+
+
+impl<'a> Assert for Field<&'a Option<Vec<String>>> {
+    type Data = &'a [String];
+
+    fn data(&self) -> Option<Self::Data> {
+        self.data.as_ref().map(|x| &x[..])
     }
 
+    fn name(&self) -> &str {
+        self.name.as_str()
+    }
 }
 
-impl<'a> Assertions for Field<&'a Option<Vec<String>>> {
-    fn assert_existence(&self, results: &mut ValidationResults)  {
-        if self.data.is_none() {
-            let error = format!("{} does not exist in the spec. It needs to be set to a value.", self.name);
-            results.append_error(error);
-        }
-    }
-    fn assert_array_value(&self, value: &str, results: &mut ValidationResults) {
-        if self.data.as_ref().unwrap() != &vec![value.to_string()] {
-            let error = format!("Only the value '{}' is accepted for {} at the top level of the spec", value, self.name);
-            results.append_error(error);
-        }
-    }
 
+//Existence or lack of it is just a property of Option.
+impl<'a, T> Field<&'a Option<T>> {
+    fn exist(&self) -> ValidationResult {
+        self.data.as_ref().map(|_| ()).ok_or(format!(
+            "{:?} does not exist in the spec. It needs to be set to a value.",
+            self.name
+        ))
+    }
+    fn not_exist(&self) -> ValidationResult {
+        if self.data.as_ref().is_some() {
+            Err(format!(
+                "{:?} exists in the spec but it should not.",
+                self.name
+            ))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 
@@ -97,51 +201,83 @@ impl<'a> Assertions for Field<&'a Option<Vec<String>>> {
 // Based on the openapi crate, there are some fields we know they exist or
 // deserialization itself would have failed. We do not test for those.
 impl OpenAPIValidation for openapi::Spec {
-    fn validate(&self, options: &ValidationOptions, mut results: &mut ValidationResults) {
-      //  let mut results = ValidationResults::new();
+    fn validate(&self, options: &ValidationOptions) -> ValidationResults {
+        let mut r = ValidationResults::new();
+        let base_path_regex = Regex::new(r"^/\w*(/\w+)*$").unwrap();
 
         let swagger = Field::new(&self.swagger, "version");
-        swagger.assert_eq("2.0", &mut results);
-
-        // TODO: warning if host is set
-
-      //  self.info.validate(options)?;
-
+        let host = Field::new(&self.host, "host");
         let base_path = Field::new(&self.base_path, "basePath");
-        base_path.assert_existence(&mut results);
-        // TODO: warning if not version on path
-        // self.base_path.with_name("basePath").assert_regexp(/\v/, &mut results)
-
         let schemes = Field::new(&self.schemes, "schemes");
-        schemes.assert_existence(&mut results);
-        schemes.assert_array_value("https", &mut results);
-
         let consumes = Field::new(&self.consumes, "consumes");
-        consumes.assert_existence(&mut results);
-        consumes.assert_array_value("application/json", &mut results);
-
         let produces = Field::new(&self.produces, "produces");
-        produces.assert_existence(&mut results);
-       // produces.assert_array_value("application/json", &mut results);
 
+        r.assert(&swagger.eq("2.0"));
+
+        r.assert_warn(&host.not_exist());
+
+        r.assert(&base_path.exist());
+        r.assert(&base_path.is_match(&base_path_regex));
+
+        r.assert(&schemes.exist());
+        r.assert(&schemes.eq(["https"]));
+
+        r.assert(&schemes.exist());
+        r.assert(&schemes.eq(["https"]));
+
+        r.assert(&consumes.exist());
+        r.assert(&consumes.eq(["application/json"]));
+
+        r.assert(&produces.exist());
+        r.assert(&produces.eq(["application/json"]));
+
+        r.validate(&self.info, options);
+
+        r
     }
 }
 
 
-// impl OpenAPIValidation for openapi::Info {
-//     fn validate(&self, options: &ValidationOptions, &mut results: ValidationResults) {
-//         //let title = Field::new(&self.title, "info.title");
-//         //title.assert_existence("title", &mut results);
-//         assert_existence(&self.title, "info.title")?;
-//         assert_existence(&self.description, "info.description")?;
-//         if options.support_google_spec {
-//             assert_existence(&self.version, "info.version")?;
-//         }
-//         assert_existence(&self.contact, "info.contact")?;
-//         assert_existence(&self.contact.as_ref().unwrap().name, "info.contact.name")?;
-//         assert_existence(&self.contact.as_ref().unwrap().email, "info.contact.email")?;
-//         // TODO: verify email format
-//     }
-// }
+impl OpenAPIValidation for openapi::Contact {
+    fn validate(&self, _: &ValidationOptions) -> ValidationResults {
+        let mut r = ValidationResults::new();
+        let contact_name = Field::new(&self.name, "info.contact.name");
+        let contact_email = Field::new(&self.email, "info.contact.email");
 
+        r.assert(&contact_name.exist());
+        r.assert(&contact_email.exist());
 
+        r
+    }
+}
+
+impl OpenAPIValidation for openapi::Info {
+    fn validate(&self, options: &ValidationOptions) -> ValidationResults {
+        let mut r = ValidationResults::new();
+        let title = Field::new(&self.title, "info.title");
+        let description = Field::new(&self.description, "info.description");
+        let version = Field::new(&self.version, "info.version");
+        let contact = Field::new(&self.contact, "info.contact");
+        let terms_of_service = Field::new(&self.terms_of_service, "info.terms_of_service");
+        let license = Field::new(&self.license, "info.license");
+
+        r.assert(&title.exist());
+
+        r.assert(&description.exist());
+
+        if options.support_google_spec {
+            r.assert(&version.exist())
+        }
+
+        r.assert_warn(&terms_of_service.not_exist());
+        r.assert_warn(&license.not_exist());
+
+        r.assert(&contact.exist());
+
+        contact.data.as_ref().and_then(|contact| {
+            Some(r.validate(contact, options))
+        });
+
+        r
+    }
+}

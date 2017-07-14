@@ -17,7 +17,7 @@ pub mod errors {
         foreign_links {
             Parse(::openapi::errors::Error);
             GoogleSpec(::google_discovery_spec::errors::Error);
-            Validation(::openapi_validation::errors::Error);
+       //     Validation(::openapi_validation::errors::Error);
         }
     }
 }
@@ -76,10 +76,11 @@ fn main() {
             let filename = arguments.value_of("file").unwrap();
             let openapi_spec = spec::from_path(filename).unwrap();
             let options = openapi_validation::ValidationOptions{ support_google_spec: false };
-            match openapi_spec.validate(&options).chain_err(|| "error") {
-                Ok(_) => println!("Validation successful!"),
-                Err(e) => exit_with_error(&e, "Validation failed"),
-            }
+            println!("Validation results: {}", openapi_spec.validate(&options));
+            // match openapi_spec.validate(&options).chain_err(|| "error") {
+            //     Ok(_) => println!("Validation successful!"),
+            //     Err(e) => exit_with_error(&e, "Validation failed"),
+            // }
         }
         ("convert", Some(arguments)) => {
             let filename = arguments.value_of("file").unwrap();

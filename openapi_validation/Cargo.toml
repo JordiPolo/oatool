@@ -4,8 +4,7 @@ version = "0.1.0"
 authors = ["Jordi Polo <mumismo@gmail.com>"]
 
 [dependencies]
-error-chain = "0.10"
-
+regex = "0.2"
 
 [dependencies.openapi]
   git = "https://github.com/softprops/openapi"
