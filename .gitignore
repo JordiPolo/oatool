@@ -1,3 +1,4 @@
 google_discovery/target
 target/
 **/*.rs.bk
+.vscode

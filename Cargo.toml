@@ -1,6 +1,6 @@
 [package]
 name = "oatool"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["Jordi Polo Carres <mumismo@gmail.com>"]
 description = "Tool to transform OpenAPI spec files"
 
@@ -21,7 +21,7 @@ openapi_validation = { path = "openapi_validation" }
 
 [dependencies.openapi]
   git = "https://github.com/softprops/openapi"
-  commit = "bc778470"
+  rev = "bc778470"
 
 
 [profile.release]

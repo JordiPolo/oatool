@@ -23,7 +23,7 @@ pub mod errors {
 }
 use errors::*;
 
-use openapi_validation::OpenAPIValidation;
+use openapi_validation::{OpenAPIValidation, ValidationOptions};
 
 
 fn exit_with_error(error: &Error, extra_error_message: &str) {
@@ -36,6 +36,14 @@ fn exit_with_error(error: &Error, extra_error_message: &str) {
     std::process::exit(-1);
 }
 
+fn exit_on_validation_error(openapi_spec: &openapi::Spec, options: &ValidationOptions) {
+    let results = openapi_spec.validate(options);
+    if results.failed() {
+        writeln!(&mut std::io::stderr(), "Validation results: {}", results).unwrap();
+        std::process::exit(-1);
+    }
+}
+
 
 fn main() {
     let file_arg = Arg::with_name("file")
@@ -45,12 +53,17 @@ fn main() {
                 .index(1);
 
     let application = App::new("oatool")
-        .version("0.6.1")
+        .version("0.7.0")
         .about("A tool to manage OpenAPI files")
         .setting(AppSettings::AllowExternalSubcommands)
         .subcommand(SubCommand::with_name("validate")
             .about("Validates an OpenAPI file.")
             .arg(&file_arg)
+            .arg(Arg::with_name("support_google")
+                .long("support_google")
+                .takes_value(false)
+                .required(false)
+                .help("Validates an openapi file which can be converted to google (or not)."))
         )
         .subcommand(SubCommand::with_name("convert")
             .about("Translates an API spec file to other format.")
@@ -75,12 +88,9 @@ fn main() {
         ("validate", Some(arguments)) => {
             let filename = arguments.value_of("file").unwrap();
             let openapi_spec = spec::from_path(filename).unwrap();
-            let options = openapi_validation::ValidationOptions{ support_google_spec: false };
-            println!("Validation results: {}", openapi_spec.validate(&options));
-            // match openapi_spec.validate(&options).chain_err(|| "error") {
-            //     Ok(_) => println!("Validation successful!"),
-            //     Err(e) => exit_with_error(&e, "Validation failed"),
-            // }
+            let options = ValidationOptions{ support_google_spec: arguments.is_present("support_google"), ..Default::default() };
+            exit_on_validation_error(&openapi_spec, &options);
+            println!("Your file passed the validation. Congrats!");
         }
         ("convert", Some(arguments)) => {
             let filename = arguments.value_of("file").unwrap();
@@ -113,7 +123,8 @@ fn convert(filename: &str, from: &str, to: &str) -> Result<String> {
         } else if to == "openapi_yaml" {
             spec::to_yaml(&openapi_spec)
         } else { // to google
-        // TODO: should not need thsi chain_err here
+            exit_on_validation_error(&openapi_spec, &ValidationOptions{ support_google_spec: true, ..Default::default() });
+            // TODO: should not need thsi chain_err here
             google_discovery_spec::to_yaml(&convert_google_spec::openapi_to_google::openapi_spec_to_google(openapi_spec)).chain_err(|| "Unable to serialize into YAML.")
         }
 }

@@ -15,6 +15,16 @@ If you do not want to setup Rust, this repository contains static linked binarie
 
 ## Using
 
+### Validate OpenAPI file
+```
+oatool validate openapi.yaml
+```
+
+### Validate OpenAPI file which is convertible to the Google Discovery format
+```
+oatool validate openapi.yaml --support_google
+```
+
 
 ### Convert to JSON
 ```

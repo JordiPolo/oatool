@@ -5,7 +5,7 @@ authors = ["Jordi Polo Carres <jcarres@mdsol.com>"]
 
 [dependencies]
 error-chain = "0.10"
-Inflector = "*"
+# Inflector = "*"
 
 
 # [dependencies.yaml-merge-keys]
@@ -16,4 +16,8 @@ google_discovery_spec = { path = "../google_discovery_spec" }
 
 [dependencies.openapi]
   git = "https://github.com/softprops/openapi"
-  commit = "bc778470"
+  rev = "bc778470"
+
+[dependencies.Inflector]
+  git = "https://github.com/jordipolo/Inflector"
+  rev = "8d38a0a"

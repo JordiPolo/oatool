@@ -5,7 +5,13 @@ authors = ["Jordi Polo <mumismo@gmail.com>"]
 
 [dependencies]
 regex = "0.2"
+# Inflector = { path = "../../Inflector" }
 
 [dependencies.openapi]
   git = "https://github.com/softprops/openapi"
-  commit = "bc778470"
+  rev = "bc778470"
+
+
+[dependencies.Inflector]
+  git = "https://github.com/jordipolo/Inflector"
+  rev = "8d38a0a"

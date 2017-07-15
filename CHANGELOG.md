@@ -1,3 +1,6 @@
+# 0.7.0
+* Adds validate subcommand
+
 # 0.6.1
 * Add support for arrays with items specified locally instead of as
   references
