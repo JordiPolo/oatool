@@ -6,11 +6,6 @@ authors = ["Jordi Polo Carres <jcarres@mdsol.com>"]
 [dependencies]
 error-chain = "0.10"
 # Inflector = "*"
-
-
-# [dependencies.yaml-merge-keys]
-# version = "0.2.0"
-# features = ["serde_yaml"]
 google_discovery_spec = { path = "../google_discovery_spec" }
 
 

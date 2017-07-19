@@ -1,11 +1,8 @@
 use openapi;
 mod google_to_openapi;
 use std::collections::BTreeMap;
-use self::google_to_openapi::*;
 
 use google_discovery_spec::*;
-use google_discovery_spec::schema::*;
-
 
 pub fn google_spec_to_openapi(spec: &Spec) -> openapi::Spec {
     let google_spec = spec.clone();

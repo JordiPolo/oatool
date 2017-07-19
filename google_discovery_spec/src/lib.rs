@@ -3,9 +3,13 @@ extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_yaml;
+extern crate yaml_merge_keys;
 
 #[macro_use]
 extern crate error_chain;
+
+
+extern crate yaml_rust;
 
 //#[cfg(feature="serde_yaml")]
 //extern crate yaml_merge_keys;
@@ -50,24 +54,28 @@ pub fn from_path<P>(path: P) -> Result<Spec>
 }
 
 /// deserialize an google discovery spec from type which implements Read
-pub fn from_reader<R>(read: R) -> Result<Spec>
+pub fn from_reader<R>(mut read: R) -> Result<Spec>
     where R: Read
 {
-    // let mut bytes = Vec::new();
-    // read.read_to_end(&mut bytes).map_err(errors::ErrorKind::Io)?;
-    // let s = std::str::from_utf8(&bytes).unwrap();//map_err(Error::str_utf8)?;
-    // let value = serde_yaml::from_str(s).unwrap();
+    //Read from reader into string . TODO: It must be easier than this
+    let mut bytes = Vec::new();
+    read.read_to_end(&mut bytes).map_err(errors::ErrorKind::Io)?;
+    let s = std::str::from_utf8(&bytes).unwrap();
 
-    // let merged = ::yaml_merge_keys::merge_keys_serde(value).unwrap();
+    let docs = yaml_rust::YamlLoader::load_from_str(s).unwrap();
 
-    // let merged_string: String = serde_yaml::from_value(merged).map_err(errors::ErrorKind::Yaml)?;//.unwrap();
-    //         println!("{:?}", merged_string);
+    //TODO: avoid clone , this merges and expands all references into the doc
+    let merged = ::yaml_merge_keys::merge_keys(docs[0].clone()).unwrap();
 
-    // let doc = serde_yaml::from_str::<Spec>(&merged_string).chain_err(|| "YAML file is not a valid google discovery file")?;
+    // Back to a string
+    let mut out_str = String::new();
+    {
+    let mut emitter = yaml_rust::YamlEmitter::new(&mut out_str);
+    emitter.dump(&merged).unwrap();
+    }
 
-    let doc = serde_yaml::from_reader::<R, Spec>(read).chain_err(|| "YAML file is not a valid google discovery file")?;
+    let doc = serde_yaml::from_str::<Spec>(&out_str).chain_err(|| "YAML file is not a valid google discovery file")?;
     Ok(doc)
-    //    Ok(::yaml_merge_keys::serde::merge_keys_serde(doc))
 }
 
 

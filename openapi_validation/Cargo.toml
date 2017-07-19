@@ -5,6 +5,7 @@ authors = ["Jordi Polo <mumismo@gmail.com>"]
 
 [dependencies]
 regex = "0.2"
+#term = "0.4.6"
 # Inflector = { path = "../../Inflector" }
 
 [dependencies.openapi]

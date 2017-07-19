@@ -19,7 +19,7 @@ pub fn openapi_spec_to_google(spec: openapi::Spec) -> Spec {
         base_path: spec.base_path.unwrap(),
         schemas: openapi_definitions_to_google_schemas(spec.definitions.unwrap()),
         resources: openapi_paths_to_google_resources(spec.paths, &spec.parameters.unwrap()),
-        aliases: None, //from_openapi_to_google::openapi_parameters_to_aliases(&spec.parameters),
+        //aliases: None, //from_openapi_to_google::openapi_parameters_to_aliases(&spec.parameters),
     }
 
 }
@@ -317,7 +317,7 @@ fn openapi_schemas_to_google_properties(
                     items: schema.items.map(|items| {
                         match items.ref_path.as_ref() {
                             Some(path) => TypeOrReference::Reference {
-                                location: transform_ref_path(&items.ref_path.as_ref().unwrap()),
+                                location: transform_ref_path(&path),
                             },
                             None => TypeOrReference::Type {
                                 items_type: items.schema_type.clone().unwrap(),

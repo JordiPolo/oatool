@@ -14,8 +14,7 @@ use field_assert::{Field, Assert};
 
 #[derive(Default)]
 pub struct ValidationOptions {
-    pub support_google_spec: bool,
-    pub context: String,
+    pub support_google_spec: bool
 }
 
 pub trait OpenAPIValidation {
@@ -35,9 +34,9 @@ impl OpenAPIValidation for openapi::Spec {
         let consumes    = Field::new(&self.consumes, "consumes");
         let produces    = Field::new(&self.produces, "produces");
 //        let info        = Field::new(&self.info, "Info block");
-        let definitions = Field::new(&self.definitions, "Definitions block");
+        let definitions = Field::new(&self.definitions, "definitions block");
 //        let paths       = Field::new(&self.paths, "Paths block");
-        let parameters  = Field::new(&self.parameters, "Parameters block");
+        let parameters  = Field::new(&self.parameters, "parameters block");
 
 
         r.assert(&swagger.eq("2.0"));
@@ -144,7 +143,14 @@ impl OpenAPIValidation for BTreeMap<String, openapi::Operations> { //openapi::Op
     }
 }
 
-impl<'a> OpenAPIValidation for PathOperation<'a> { //openapi::Operations {
+
+// struct PathResponses<'a> {
+//     path: &'a str,
+//     results: &'a BTreeMap<String, openapi::Response>,
+// }
+
+
+impl<'a> OpenAPIValidation for PathOperation<'a> {
     fn validate(&self, options: &ValidationOptions) -> ValidationResults {
         let mut r = ValidationResults::new();
         let path = self.path;
@@ -154,13 +160,13 @@ impl<'a> OpenAPIValidation for PathOperation<'a> { //openapi::Operations {
             None => r,
             Some(operation) => {
                 let summary      = Field::new(&operation.summary, &format!("summary in '{}'", path));
-                let description  = Field::new(&operation.description, &format!("Description in '{}'", path));
+                let description  = Field::new(&operation.description, &format!("description in '{}'", path));
                 let schemes      = Field::new(&operation.schemes, &format!("schemes in '{}'", path));
-                let consumes     = Field::new(&operation.consumes, &format!("consumes in '{}'", path));
+                let consumes     = Field::new(&operation.consumes, &format!("consumes in '{}'", path)); //&output(path, "consumes"));
                 let produces     = Field::new(&operation.produces, &format!("produces in '{}'", path));
                 let operation_id = Field::new(&operation.operation_id, &format!("operation_id in '{}'", path));
 
-                r.assert(&description.exist());
+                r.assert(&summary.exist());
                 r.assert(&summary.length_less_than(120));
                 r.assert(&description.exist());
                 r.assert_warn(&schemes.not_exist());
@@ -169,8 +175,9 @@ impl<'a> OpenAPIValidation for PathOperation<'a> { //openapi::Operations {
                 if options.support_google_spec {
                     r.assert(&operation_id.exist());
                 } else {
-                    r.assert(&operation_id.not_exist());
+                    r.assert_warn(&operation_id.not_exist());
                 }
+
                 // responses
                 // parameters
 
@@ -179,3 +186,56 @@ impl<'a> OpenAPIValidation for PathOperation<'a> { //openapi::Operations {
         }
     }
 }
+
+
+// impl<'a> OpenAPIValidation for PathResponses<'a> {
+//     fn validate(&self, options: &ValidationOptions) -> ValidationResults {
+//         let mut r = ValidationResults::new();
+//         let path = self.path;
+//         let results = self.results.clone();
+
+
+
+//         r
+//     }
+// }
+
+
+impl OpenAPIValidation for openapi::Parameter {
+    fn validate(&self, _: &ValidationOptions) -> ValidationResults {
+        let mut r = ValidationResults::new();
+        let name  = Field::new(&self.name, &format!("parameter.name {}", &self.name));
+        let location = Field::new(&self.location, &format!("parameter.in {}", &self.name));
+       // let required = Field::new(&self.required, &format!("parameter.required {}", &self.name));
+        let param_type = Field::new(&self.param_type, &format!("parameter.param_type {}", &self.name));
+        let description = Field::new(&self.description, &format!("parameter.description {}", &self.name));
+        //  let format =
+        // TODO : default (openapi library does not support?)
+        if location.data().is_some() && location.data().unwrap() != "header" {
+            r.assert(&name.eq(&self.name.to_snake_case()));
+        }
+       // r.assert(&location.included_in(["header", "body", "query", "path"]));
+        r.assert(&param_type.exist());
+        r.assert(&description.exist());
+
+        r
+    }
+}
+
+//extern crate term;
+//use std::io::prelude::*;
+
+
+// fn output(location: &str, key_name: &str) -> String {
+//     let mut t = String::new();
+
+//     t.fg(term::color::BLUE).unwrap();
+//     write!(t, "{}", location).unwrap();
+
+//     t.fg(term::color::GREEN).unwrap();
+//     writeln!(t, " :{}  ", key_name).unwrap();
+
+//     t.reset().unwrap();
+//     t
+//     //format!("{} {}", key_name, location)
+// }

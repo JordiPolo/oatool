@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct GoogleSchemas(pub BTreeMap<String, Schema>);
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct GoogleResources(pub BTreeMap<String, Resource>);
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -12,7 +12,7 @@ pub struct GoogleParams(pub BTreeMap<String, Property>);
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct GoogleMethods(pub Vec<Method>);
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct Spec {
     pub id: String,
     pub name: String,
@@ -27,8 +27,8 @@ pub struct Spec {
     pub base_path: String,
     pub schemas: GoogleSchemas,
     pub resources: GoogleResources,
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub aliases: Option<Aliases>
+    //#[serde(skip_serializing_if="Option::is_none")]
+    //pub aliases: Option<Aliases>
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -82,7 +82,7 @@ pub struct Property {
     // Are default and required valid in this context? Maybe properties can be Properties or Params
     #[serde(rename="default")]
     #[serde(skip_serializing_if="Option::is_none")]
-    pub the_default: Option<bool>,
+    pub the_default: Option<String>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub required: Option<bool>,
     #[serde(skip_serializing_if="Option::is_none")]
