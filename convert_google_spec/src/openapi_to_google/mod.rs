@@ -38,6 +38,7 @@ fn openapi_definitions_to_google_schemas(
                 name.clone(),
                 Schema::ResponseSingle {
                     id: format!("schemas/{}", name),
+                    description: definition.description,
                     resource: name.to_snake_case().to_plural(),
                     schema_type: schema_type,
                     properties: openapi_schemas_to_google_properties(
@@ -155,7 +156,7 @@ fn to_google_method(
             id: operation.operation_id.unwrap(),
             path: path,
             http_method: method_name.to_string(),
-            description: operation.description.unwrap(),
+            description: operation.description.or(operation.summary),
             parameters: None,
             response: get_successful_response(operation.responses).map(
                 openapi_response_to_google_response,
@@ -194,8 +195,9 @@ fn to_google_method(
 
         let request = match has_request.clone() {
             Some(openapi::ParameterOrRef::Parameter { schema, .. }) => {
-                Some(MethodRequest {
-                    location: transform_ref_path(&schema.unwrap().ref_path.unwrap()),
+                Some(Property {
+                    location: Some(transform_ref_path(&schema.unwrap().ref_path.unwrap())),
+                    ..Default::default()
                 })
             }
             _ => None,
@@ -211,7 +213,7 @@ fn to_google_method(
             id: operation.operation_id.unwrap(),
             path: path,
             http_method: method_name.to_string(),
-            description: operation.description.unwrap(),
+            description: operation.description.or(operation.summary),
             parameters: Some(openapi_param_to_google_param(params, parameters)),
             response: get_successful_response(operation.responses).map(
                 openapi_response_to_google_response,
@@ -295,6 +297,7 @@ fn openapi_param_to_google_param(
     GoogleParams(google_params)
 }
 
+// Review properties in Google and try to fill as many as possible
 fn openapi_schemas_to_google_properties(
     schemas: BTreeMap<String, openapi::Schema>,
     required: &Option<Vec<String>>,
@@ -350,8 +353,8 @@ fn openapi_response_to_google_response(response: openapi::Response) -> Response 
         }
     } else if schema.properties.is_some() {
         Response::ResponseSingle {
-            id: "NOTSET".to_string(),
-            resource: "NOTSET".to_string(),
+            id: Some("NOTSET".to_string()),
+            resource: Some("NOTSET".to_string()),
             response_type: schema.schema_type.unwrap(),
             properties: openapi_schema_to_google_schema(schema.properties.unwrap()),
         }

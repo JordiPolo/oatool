@@ -168,7 +168,9 @@ impl<'a> OpenAPIValidation for PathOperation<'a> {
 
                 r.assert(&summary.exist());
                 r.assert(&summary.length_less_than(120));
-                r.assert(&description.exist());
+                // if operation.summary.is_none() {
+                //     r.assert(&description.exist());
+                // }
                 r.assert_warn(&schemes.not_exist());
                 r.assert_warn(&consumes.not_exist());
                 r.assert_warn(&produces.not_exist());

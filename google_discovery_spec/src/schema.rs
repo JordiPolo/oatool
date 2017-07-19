@@ -64,11 +64,13 @@ pub enum Schema {
         resource: String,
         #[serde(rename="type")]
         schema_type: String,
+        #[serde(skip_serializing_if="Option::is_none")]
+        description: Option<String>,
         properties: BTreeMap<String, Property>,
     },
 }
 
-#[serde(deny_unknown_fields)]
+//#[serde(deny_unknown_fields)]
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Default)]
 pub struct Property {
     #[serde(rename="type")]
@@ -80,13 +82,35 @@ pub struct Property {
     #[serde(skip_serializing_if="Option::is_none")]
     pub items: Option<TypeOrReference>,
     // Are default and required valid in this context? Maybe properties can be Properties or Params
-    #[serde(rename="default")]
-    #[serde(skip_serializing_if="Option::is_none")]
-    pub the_default: Option<String>,
+    // #[serde(rename="default")]
+    // #[serde(skip_serializing_if="Option::is_none")]
+    // pub the_default: Option<String>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub required: Option<bool>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub location: Option<String>,
+    #[serde(rename="enum")]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub the_enum: Option<Vec<String>>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub readonly: Option<bool>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub properties: Option<Box<BTreeMap<String, Property>>>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub id: Option<String>,
+
+    #[serde(rename="minLength")]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub min_length: Option<i32>,
+
+    #[serde(rename="maxLength")]
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub max_length: Option<i32>,
+
+    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(rename="$ref")]
+    pub the_location: Option<String>,
+
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -100,16 +124,18 @@ pub struct Method {
     pub path: String,
     #[serde(rename="httpMethod")]
     pub http_method: String,
-    pub description: String,
+    pub description: Option<String>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub parameters: Option<GoogleParams>,
     #[serde(skip_serializing_if="Option::is_none")]
-    pub request: Option<MethodRequest>,
+    pub request: Option<Property>,  //This should be MethodRequest, maybe we can do this later
     #[serde(skip_serializing_if="Option::is_none")]
     pub response: Option<Response>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub slt: Option<SLT>,
 }
+
+
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct MethodRequest {
@@ -150,8 +176,8 @@ pub enum Response {
         items: Reference,
     },
     ResponseSingle {
-        id: String,
-        resource: String,
+        id: Option<String>,
+        resource: Option<String>,
         #[serde(rename="type")]
         response_type: String,
         properties: BTreeMap<String, Property>,
@@ -186,7 +212,7 @@ pub enum TypeOrReference {
     Type {
         #[serde(rename="type")]
         items_type: String,
-    }
+    },
 }
 
 //TODO: Not used anywhere but may be useful to dry the enums?

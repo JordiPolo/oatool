@@ -1,3 +1,7 @@
+# 0.8.0
+* Adds support for more complex google specs
+* Adds support for << in yaml
+
 # 0.7.0
 * Adds validate subcommand
 

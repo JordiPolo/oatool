@@ -72,7 +72,7 @@ pub fn methods_to_operations(methods: &GoogleMethods) -> openapi::Operations {
 
 pub fn method_to_operation(method: &Method) -> openapi::Operation {
     openapi::Operation {
-        description: Some(method.description.clone()),
+        description: method.description.clone(),
         operation_id: Some(method.id.to_string()),
         parameters: method.clone().parameters.map(|param| OpenAPIParams::from(&param).0),
         responses: from_google_to_openapi_responses(&method.response).0,
@@ -144,6 +144,7 @@ fn transform_ref_path(google_ref: &str) -> String {
 }
 
 //TODO: make this a From implementation
+// TODO: lots of good stuff in these properties
 fn google_schema_to_openapi_schema(properties: &BTreeMap<String, Property>)
                                    -> BTreeMap<String, openapi::Schema> {
     properties.iter()

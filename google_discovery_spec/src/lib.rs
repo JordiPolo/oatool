@@ -73,6 +73,7 @@ pub fn from_reader<R>(mut read: R) -> Result<Spec>
     let mut emitter = yaml_rust::YamlEmitter::new(&mut out_str);
     emitter.dump(&merged).unwrap();
     }
+    //print!("{}", out_str);
 
     let doc = serde_yaml::from_str::<Spec>(&out_str).chain_err(|| "YAML file is not a valid google discovery file")?;
     Ok(doc)
