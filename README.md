@@ -9,7 +9,15 @@ It can be used to convert OpenAPI files to Google discovery files and viceversa.
 
 ## Installing
 
-TODO: Install via Cargo.
+To install the Rust toolchain and run the code, do:
+
+```
+curl https://sh.rustup.rs -sSf | sh
+rustup update
+cargo install
+cargo build
+cargo run -- <one of the commands below>
+```
 
 If you do not want to setup Rust, this repository contains static linked binaries which should run without dependencies in Linux, MacOS X and Windows. Just download the [latest release](https://github.com/JordiPolo/oatool/releases) for your platform.
 
